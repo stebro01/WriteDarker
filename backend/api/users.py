@@ -1,8 +1,11 @@
+"""API endpoints for user management."""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from . import schemas, models, auth
-from .db import SessionLocal, Base, engine
+from .. import schemas, models
+from ..services import auth
+from ..db import SessionLocal, Base, engine
 
 Base.metadata.create_all(bind=engine)
 
@@ -10,6 +13,8 @@ router = APIRouter()
 
 
 def get_db():
+    """Provide a database session dependency."""
+
     db = SessionLocal()
     try:
         yield db
@@ -18,14 +23,30 @@ def get_db():
 
 
 def authenticate_user(db: Session, username: str, password: str):
+    """Return a user if the credentials are valid."""
+
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user or not auth.verify_password(password, user.password_hash):
         return None
     return user
 
 
+def get_current_user(token: str, db: Session) -> models.User:
+    """Return the user associated with an access token."""
+
+    payload = auth.decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    user_id = int(payload.get("sub"))
+    user = db.query(models.User).get(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 @router.post("/register", response_model=schemas.UserRead)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Register a new user and return the created record."""
     if db.query(models.User).filter(models.User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
     hashed_pw = auth.get_password_hash(user.password)
@@ -45,6 +66,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=schemas.Token)
 def login(form_data: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Authenticate and return an access token."""
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
@@ -54,6 +76,7 @@ def login(form_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=schemas.UserRead)
 def read_me(token: str, db: Session = Depends(get_db)):
+    """Return the currently logged-in user."""
     payload = auth.decode_access_token(token)
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -70,6 +93,7 @@ def update_me(
     update: schemas.UserUpdate,
     db: Session = Depends(get_db),
 ):
+    """Update fields for the current user."""
     payload = auth.decode_access_token(token)
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
@@ -93,4 +117,5 @@ def update_me(
 
 @router.post("/logout")
 def logout():
+    """Placeholder logout endpoint."""
     return {"message": "logged out"}

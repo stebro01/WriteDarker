@@ -33,12 +33,68 @@ class DocumentBase(BaseModel):
     label: Optional[str] = None
     description: Optional[str] = None
     notes: Optional[str] = None
+    project_id: Optional[int] = None
 
 class DocumentCreate(DocumentBase):
     pass
 
 class DocumentRead(DocumentBase):
     id: int
+
+    class Config:
+        orm_mode = True
+
+
+class ProjectBase(BaseModel):
+    label: str
+    description: Optional[str] = None
+    coauthors: Optional[str] = None
+
+
+class ProjectCreate(ProjectBase):
+    pass
+
+
+class ProjectUpdate(BaseModel):
+    label: Optional[str] = None
+    description: Optional[str] = None
+    coauthors: Optional[str] = None
+
+
+class ProjectRead(ProjectBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+class ReferenceCreate(BaseModel):
+    project_id: int
+    query: str
+
+
+class ReferenceRead(BaseModel):
+    id: int
+    title: str
+    authors: str
+    journal: str
+    year: str
+
+    class Config:
+        orm_mode = True
+
+
+class SettingCreate(BaseModel):
+    key: str
+    value: str
+    user_based: bool = True
+
+
+class SettingRead(BaseModel):
+    id: int
+    key: str
+    value: str
+    user_id: Optional[int] = None
 
     class Config:
         orm_mode = True

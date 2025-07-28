@@ -14,15 +14,16 @@ The goal is to create a web application that feels like a lightweight Google Doc
 
 ## Repository Layout
 
-The directories present here are mostly placeholders:
+The backend is organised into dedicated packages:
 
 ```
-backend/   # FastAPI skeleton (no real API yet)
-frontend/  # Quasar/Vue.js placeholder
+backend/api        # FastAPI routers
+backend/services   # business logic
+backend/models     # SQLAlchemy models
 ```
 
-Additional modules such as CRUD operations and AI endpoints are stubs only. The detailed
-structure described below is still planned and not implemented.
+Basic authentication, document handling and project CRUD endpoints are
+implemented together with example tests.
 
 ## Setup and Running the Backend
 

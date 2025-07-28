@@ -1,23 +1,16 @@
+"""API endpoints for document management."""
+
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Optional
 from PyPDF2 import PdfReader
 import io
 
-from . import schemas, models, auth
-from .users import get_db
+from .. import schemas, models
+from ..services import auth
+from .users import get_db, get_current_user
 
 router = APIRouter()
-
-
-def get_current_user(token: str, db: Session) -> models.User:
-    payload = auth.decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    user = db.query(models.User).get(int(payload.get("sub")))
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
 
 
 @router.post("/", response_model=schemas.DocumentRead)
@@ -30,6 +23,8 @@ def create_document(
     notes: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
+    """Create a new document owned by the current user."""
+
     user = get_current_user(token, db)
 
     pdf_bytes = None
@@ -59,6 +54,8 @@ def create_document(
 
 @router.get("/{doc_id}", response_model=schemas.DocumentRead)
 def read_document(doc_id: int, token: str, db: Session = Depends(get_db)):
+    """Return a single document owned by the user."""
+
     user = get_current_user(token, db)
     doc = db.query(models.Document).filter(models.Document.id == doc_id, models.Document.creator_id == user.id).first()
     if not doc:
@@ -68,6 +65,8 @@ def read_document(doc_id: int, token: str, db: Session = Depends(get_db)):
 
 @router.delete("/{doc_id}")
 def delete_document(doc_id: int, token: str, db: Session = Depends(get_db)):
+    """Delete a document owned by the current user."""
+
     user = get_current_user(token, db)
     doc = db.query(models.Document).filter(models.Document.id == doc_id, models.Document.creator_id == user.id).first()
     if not doc:
