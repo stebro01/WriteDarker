@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: writedarker
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: writedarker
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+volumes:
+  db-data:
