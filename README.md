@@ -45,6 +45,24 @@ implemented together with example tests.
    uvicorn backend.main:app --reload
    ```
 
+## Development Setup
+
+To install all JavaScript and Python dependencies and run both the
+backend and frontend together:
+
+1. Install root npm packages and create the virtual environment:
+
+   ```bash
+   npm install
+   npm run setup
+   ```
+
+2. Start the development servers (backend API and React app):
+
+   ```bash
+   npm run start
+   ```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up branches, follow coding standards, and track issues.
