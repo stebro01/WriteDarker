@@ -33,3 +33,11 @@ Once the backend is implemented you will be able to:
 3. Start the application with `uvicorn backend.main:app --reload`.
 
 These instructions are provisional until a full `requirements.txt` is added.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to set up branches, follow coding standards, and track issues.
+
+## License
+
+This project is released under the [MIT License](LICENSE).
