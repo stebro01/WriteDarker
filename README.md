@@ -24,15 +24,32 @@ frontend/  # Quasar/Vue.js placeholder
 Additional modules such as CRUD operations and AI endpoints are stubs only. The detailed
 structure described below is still planned and not implemented.
 
-## Running the Backend (planned)
+## Setup and Running the Backend
 
-Once the backend is implemented you will be able to:
+1. Create a virtual environment:
 
-1. Create a Python environment with `python -m venv venv` and activate it.
-2. Install dependencies, e.g. `pip install fastapi uvicorn`.
-3. Start the application with `uvicorn backend.main:app --reload`.
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-These instructions are provisional until a full `requirements.txt` is added.
+2. Install the dependencies listed in `requirements.txt`:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. (Optional) Start a local PostgreSQL instance with Docker Compose:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Run the application:
+
+   ```bash
+   uvicorn backend.main:app --reload
+   ```
 
 ## Contributing
 
