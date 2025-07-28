@@ -1,2 +1,2 @@
 # WriteDarker
- Projekt um Paper mit Letsch Modellen zu schreiben
+ Projekt um Paper mit LLM  zu schreiben
