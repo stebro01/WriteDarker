@@ -39,14 +39,7 @@ implemented together with example tests.
    ```bash
    pip install -r requirements.txt
    ```
-
-3. (Optional) Start a local PostgreSQL instance with Docker Compose:
-
-   ```bash
-   docker-compose up -d
-   ```
-
-4. Run the application:
+3. Run the application:
 
    ```bash
    uvicorn backend.main:app --reload

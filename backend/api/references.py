@@ -1,6 +1,6 @@
 """API endpoints for managing references."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from .. import schemas, models
@@ -11,14 +11,21 @@ router = APIRouter()
 
 
 @router.post("/", response_model=schemas.ReferenceRead)
-def add_reference(ref: schemas.ReferenceCreate, token: str, db: Session = Depends(get_db)):
+def add_reference(
+    token: str,
+    project_id: int = Form(...),
+    query: str = Form(...),
+    pdf: UploadFile = File(None),
+    db: Session = Depends(get_db),
+):
     """Add a reference to a project."""
     user = get_current_user(token, db)
-    proj = db.query(models.Project).filter(models.Project.id == ref.project_id, models.Project.author_id == user.id).first()
+    proj = db.query(models.Project).filter(models.Project.id == project_id, models.Project.author_id == user.id).first()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
-    data = ref_service.fetch_reference(ref.query)
-    db_ref = models.Reference(project_id=proj.id, **data)
+    data = ref_service.fetch_reference(query)
+    pdf_bytes = pdf.file.read() if pdf else None
+    db_ref = models.Reference(project_id=proj.id, pdf=pdf_bytes, **data)
     db.add(db_ref)
     db.commit()
     db.refresh(db_ref)

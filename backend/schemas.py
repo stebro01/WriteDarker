@@ -34,8 +34,13 @@ class DocumentBase(BaseModel):
     description: Optional[str] = None
     notes: Optional[str] = None
     project_id: Optional[int] = None
+    position: Optional[int] = None
 
 class DocumentCreate(DocumentBase):
+    pass
+
+
+class DocumentUpdate(DocumentBase):
     pass
 
 class DocumentRead(DocumentBase):

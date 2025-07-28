@@ -41,11 +41,13 @@ class Document(Base):
     id = Column(Integer, primary_key=True, index=True)
     text = Column(Text)
     pdf = Column(LargeBinary)
+    image = Column(LargeBinary)
     label = Column(String)
     description = Column(String)
     creator_id = Column(Integer, ForeignKey("users.id"))
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
     notes = Column(String)
+    position = Column(Integer, default=0)
 
     owner = relationship("User", back_populates="documents")
     project = relationship("Project", back_populates="documents")
@@ -77,6 +79,7 @@ class Reference(Base):
     authors = Column(String)
     journal = Column(String)
     year = Column(String)
+    pdf = Column(LargeBinary)
     project_id = Column(Integer, ForeignKey("projects.id"))
 
     project = relationship("Project", back_populates="references")
