@@ -38,7 +38,7 @@ def get_current_user(token: str, db: Session) -> models.User:
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     user_id = int(payload.get("sub"))
-    user = db.query(models.User).get(user_id)
+    user = db.get(models.User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -81,7 +81,7 @@ def read_me(token: str, db: Session = Depends(get_db)):
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     user_id = int(payload.get("sub"))
-    user = db.query(models.User).get(user_id)
+    user = db.get(models.User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -98,7 +98,7 @@ def update_me(
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     user_id = int(payload.get("sub"))
-    user = db.query(models.User).get(user_id)
+    user = db.get(models.User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if update.password:
