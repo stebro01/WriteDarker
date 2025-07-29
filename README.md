@@ -45,6 +45,21 @@ implemented together with example tests.
    uvicorn backend.main:app --reload
    ```
 
+## Environment Variables
+
+Configuration values can be supplied via environment variables or a `.env` file
+at the repository root. Important variables include:
+
+```bash
+SECRET_KEY=supersecretkey
+DB_PATH=./AppData/writedarker.db
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+`SECRET_KEY` is used to sign authentication tokens, `DB_PATH` specifies the
+SQLite database file, and `ACCESS_TOKEN_EXPIRE_MINUTES` controls how long
+generated tokens remain valid.
+
 ## Development Setup
 
 To install all JavaScript and Python dependencies and run both the
