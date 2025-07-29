@@ -39,6 +39,27 @@ export default tseslint.config([
 ])
 ```
 
+## Styling
+
+This app uses Tailwind CSS with a small chat-inspired theme defined in
+`tailwind.config.cjs`. Custom colors are provided for the background, text and
+sidebar panels:
+
+```js
+extend: {
+  colors: {
+    'chat-bg': '#1f2937',   // dark background
+    'chat-text': '#f3f4f6', // light text
+    'chat-panel': '#374151' // panel background
+  }
+}
+```
+
+The global styles in `src/index.css` apply these colors to the body element.
+Components can use the classes `bg-chat-bg`, `text-chat-text` and
+`bg-chat-panel` to match the default theme. Panels in the editor are expandable
+using simple state toggles and Tailwind utility classes.
+
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js

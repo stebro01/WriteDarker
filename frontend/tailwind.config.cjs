@@ -4,7 +4,13 @@ module.exports = {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'chat-bg': '#1f2937',
+        'chat-text': '#f3f4f6',
+        'chat-panel': '#374151',
+      },
+    },
   },
   plugins: [],
 }
