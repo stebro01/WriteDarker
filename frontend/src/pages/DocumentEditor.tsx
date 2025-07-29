@@ -70,7 +70,7 @@ export default function DocumentEditor() {
   }
 
   return (
-    <div className="flex h-screen bg-chat-bg text-chat-text">
+    <div className="flex h-screen bg-[#1f2937] text-[#f3f4f6]">
       <div className="w-2/3 flex flex-col">
         <textarea
           className="flex-1 p-2 border"

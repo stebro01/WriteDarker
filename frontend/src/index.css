@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-chat-bg text-chat-text font-sans;
+@layer base {
+  body {
+    @apply font-sans bg-[#1f2937] text-[#f3f4f6];
+  }
 }
