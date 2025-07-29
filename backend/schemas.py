@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 from pydantic import BaseModel
 
 class UserBase(BaseModel):
@@ -45,6 +46,16 @@ class DocumentUpdate(DocumentBase):
 
 class DocumentRead(DocumentBase):
     id: int
+
+    class Config:
+        from_attributes = True
+
+
+class DocumentRevisionRead(BaseModel):
+    id: int
+    document_id: int
+    text: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
