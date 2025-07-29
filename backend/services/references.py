@@ -38,22 +38,27 @@ def _parse_pubmed_xml(xml: str) -> dict:
 
 def fetch_reference(query: str) -> dict:
     """Return basic metadata for a PubMed ID or search term."""
-    if query.isdigit():
-        url = (
-            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed"
-            f"&id={query}&retmode=xml"
-        )
-        resp = httpx.get(url, timeout=10)
-        resp.raise_for_status()
-        data = _parse_pubmed_xml(resp.text)
-        if data:
-            return data
-
-    # fallback to original behaviour for arbitrary queries
-    return {
+    default_data = {
         "title": query,
         "authors": "",
         "journal": "",
         "year": "",
     }
+
+    if query.isdigit():
+        url = (
+            "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed"
+            f"&id={query}&retmode=xml"
+        )
+        try:
+            resp = httpx.get(url, timeout=10)
+            resp.raise_for_status()
+        except httpx.HTTPError:
+            return default_data
+        data = _parse_pubmed_xml(resp.text)
+        if data:
+            return data
+
+    # fallback to original behaviour for arbitrary queries
+    return default_data
 
