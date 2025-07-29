@@ -9,3 +9,4 @@ PyPDF2
 httpx
 python-multipart
 python-dotenv
+diff-match-patch

@@ -10,6 +10,13 @@ function login() {
 }
 
 describe('App E2E', () => {
+  it('admin can login', () => {
+    cy.visit('/login')
+    cy.get('input[placeholder="Username"]').type('admin')
+    cy.get('input[type="password"]').type('admin')
+    cy.contains('button', 'Login').click()
+    cy.url().should('include', '/projects')
+  })
   it('registers a new user', () => {
     cy.visit('/register')
     cy.get('input[placeholder="Username"]').type(username)
@@ -49,6 +56,28 @@ describe('App E2E', () => {
         const docId = r.body.id
         cy.visit(`/project/${projectId}/documents/${docId}`)
         cy.contains('h1', 'Hello')
+        cy.get('textarea').type('\nMore text')
+        cy.get('textarea').blur()
+        cy.contains('More text')
+        cy.get('input[type="file"]').first().selectFile('cypress/fixtures/sample.pdf')
+      })
+    })
+  })
+
+  it('uploads reference pdf', () => {
+    login()
+    cy.window().then(win => {
+      const token = win.localStorage.getItem('token')
+      const projectId = win.sessionStorage.getItem('projectId')
+      cy.request({
+        method: 'POST',
+        url: 'http://localhost:8000/documents/',
+        qs: { token },
+        body: { text: 'refdoc', project_id: projectId }
+      }).then(r => {
+        const docId = r.body.id
+        cy.visit(`/project/${projectId}/documents/${docId}`)
+        cy.get('input[type="file"]').eq(2).selectFile('cypress/fixtures/sample.pdf')
       })
     })
   })
