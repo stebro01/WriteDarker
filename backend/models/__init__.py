@@ -7,7 +7,9 @@ from sqlalchemy import (
     LargeBinary,
     Text,
     ForeignKey,
+    DateTime,
 )
+from datetime import datetime
 from sqlalchemy.orm import relationship
 
 from ..db import Base
@@ -15,6 +17,7 @@ from ..db import Base
 __all__ = [
     "User",
     "Document",
+    "DocumentRevision",
     "Project",
     "Reference",
     "Setting",
@@ -51,6 +54,7 @@ class Document(Base):
 
     owner = relationship("User", back_populates="documents")
     project = relationship("Project", back_populates="documents")
+    revisions = relationship("DocumentRevision", back_populates="document", cascade="all, delete-orphan")
 
 
 class Project(Base):
@@ -96,3 +100,16 @@ class Setting(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     user = relationship("User")
+
+
+class DocumentRevision(Base):
+    """Historical record of document text changes."""
+
+    __tablename__ = "document_revisions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    text = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    document = relationship("Document", back_populates="revisions")

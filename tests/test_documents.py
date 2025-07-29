@@ -48,3 +48,35 @@ def test_upload_pdf():
     resp = client.post("/documents/", params={"token": token}, files=files)
     assert resp.status_code == 200
     assert resp.json()["id"] is not None
+
+
+def test_revision_history_and_restore():
+    token = get_token()
+    # create document
+    resp = client.post("/documents/", params={"token": token, "text": "v1"})
+    assert resp.status_code == 200
+    doc_id = resp.json()["id"]
+
+    # update twice
+    resp = client.put(f"/documents/{doc_id}", params={"token": token}, json={"text": "v2"})
+    assert resp.status_code == 200
+    resp = client.put(f"/documents/{doc_id}", params={"token": token}, json={"text": "v3"})
+    assert resp.status_code == 200
+
+    # check revisions
+    rev_resp = client.get(f"/documents/{doc_id}/revisions", params={"token": token})
+    assert rev_resp.status_code == 200
+    revs = rev_resp.json()
+    assert len(revs) == 2
+
+    # restore first revision
+    restore_resp = client.post(
+        f"/documents/{doc_id}/restore/{revs[0]['id']}", params={"token": token}
+    )
+    assert restore_resp.status_code == 200
+    assert restore_resp.json()["text"] == "v1"
+
+    # ensure revision added
+    rev_resp2 = client.get(f"/documents/{doc_id}/revisions", params={"token": token})
+    assert rev_resp2.status_code == 200
+    assert len(rev_resp2.json()) == 3

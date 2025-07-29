@@ -5,12 +5,31 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from PyPDF2 import PdfReader
 import io
+import os
 
 from .. import schemas, models
 from ..services import auth
 from .users import get_db, get_current_user
 
 router = APIRouter()
+
+
+def _add_revision(db: Session, doc: models.Document):
+    """Store the current text of a document as a revision and enforce history limit."""
+    rev = models.DocumentRevision(document_id=doc.id, text=doc.text)
+    db.add(rev)
+    db.commit()
+    limit = int(os.getenv("DOC_HISTORY_LIMIT", "20"))
+    q = (
+        db.query(models.DocumentRevision)
+        .filter(models.DocumentRevision.document_id == doc.id)
+        .order_by(models.DocumentRevision.created_at.desc())
+    )
+    revisions = q.all()
+    if len(revisions) > limit:
+        for r in revisions[limit:]:
+            db.delete(r)
+        db.commit()
 
 
 @router.post("/", response_model=schemas.DocumentRead)
@@ -89,7 +108,8 @@ def update_document(
     )
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    if update.text is not None:
+    if update.text is not None and update.text != doc.text:
+        _add_revision(db, doc)
         doc.text = update.text
     if update.label is not None:
         doc.label = update.label
@@ -103,6 +123,52 @@ def update_document(
         doc.position = update.position
     db.commit()
     db.refresh(doc)
+    return doc
+
+
+@router.get("/{doc_id}/revisions", response_model=List[schemas.DocumentRevisionRead])
+def list_revisions(doc_id: int, token: str, db: Session = Depends(get_db)):
+    """Return revision history for a document."""
+    user = get_current_user(token, db)
+    doc = (
+        db.query(models.Document)
+        .filter(models.Document.id == doc_id, models.Document.creator_id == user.id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    revs = (
+        db.query(models.DocumentRevision)
+        .filter(models.DocumentRevision.document_id == doc_id)
+        .order_by(models.DocumentRevision.created_at)
+        .all()
+    )
+    return revs
+
+
+@router.post("/{doc_id}/restore/{rev_id}", response_model=schemas.DocumentRead)
+def restore_revision(doc_id: int, rev_id: int, token: str, db: Session = Depends(get_db)):
+    """Restore a document to a previous revision."""
+    user = get_current_user(token, db)
+    doc = (
+        db.query(models.Document)
+        .filter(models.Document.id == doc_id, models.Document.creator_id == user.id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    rev = (
+        db.query(models.DocumentRevision)
+        .filter(models.DocumentRevision.id == rev_id, models.DocumentRevision.document_id == doc_id)
+        .first()
+    )
+    if not rev:
+        raise HTTPException(status_code=404, detail="Revision not found")
+    if rev.text != doc.text:
+        _add_revision(db, doc)
+        doc.text = rev.text
+        db.commit()
+        db.refresh(doc)
     return doc
 
 
