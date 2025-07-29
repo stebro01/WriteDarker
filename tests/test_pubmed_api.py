@@ -1,6 +1,7 @@
 import sys, os
 import uuid
 from unittest.mock import patch
+import httpx
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi.testclient import TestClient
@@ -91,3 +92,34 @@ def test_fetch_pubmed_reference_and_store():
     get_resp = client.get(f"/references/{ref['id']}", params={"token": token})
     assert get_resp.status_code == 200
     assert get_resp.json() == ref
+
+
+def test_fetch_pubmed_reference_network_error():
+    token = get_token()
+    proj_resp = client.post(
+        "/projects/",
+        params={"token": token},
+        json={"label": "Ref", "description": "test"},
+    )
+    assert proj_resp.status_code == 200
+    proj_id = proj_resp.json()["id"]
+
+    def raise_error(url, timeout=10):
+        raise httpx.HTTPError("boom")
+
+    with patch("backend.services.references.httpx.get", side_effect=raise_error):
+        resp = client.post(
+            "/references/",
+            params={"token": token},
+            data={"project_id": proj_id, "query": "37936010"},
+        )
+
+    assert resp.status_code == 200
+    ref = resp.json()
+    assert ref == {
+        "id": ref["id"],
+        "title": "37936010",
+        "authors": "",
+        "journal": "",
+        "year": "",
+    }
