@@ -14,16 +14,39 @@ from .api.documents import router as docs_router
 from .api.projects import router as projects_router
 from .api.references import router as references_router
 from .api.settings import router as settings_router
-from .db import Base, engine
+from .db import Base, engine, SessionLocal
+from .models import User
+from .services.auth import get_password_hash
 
 # Configure CORS
 origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
 origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
 
+
 # Ensure database exists
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+def ensure_admin_user():
+    """Create default admin user if not present."""
+    username = os.getenv("ADMIN_USERNAME")
+    password = os.getenv("ADMIN_PASSWORD")
+    if not username or not password:
+        return
+    db = SessionLocal()
+    try:
+        if not db.query(User).filter(User.username == username).first():
+            admin = User(
+                username=username,
+                password_hash=get_password_hash(password),
+            )
+            db.add(admin)
+            db.commit()
+    finally:
+        db.close()
 
 app.add_middleware(
     CORSMiddleware,
