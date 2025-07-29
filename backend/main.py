@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from pathlib import Path
 from dotenv import load_dotenv
+
+# Load environment variables from the repository root
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from .api.crud import router as crud_router
 from .api.ai import router as ai_router
@@ -11,8 +15,6 @@ from .api.projects import router as projects_router
 from .api.references import router as references_router
 from .api.settings import router as settings_router
 from .db import Base, engine
-
-load_dotenv()
 
 # Configure CORS
 origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
