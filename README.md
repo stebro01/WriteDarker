@@ -54,11 +54,13 @@ at the repository root. Important variables include:
 SECRET_KEY=supersecretkey
 DB_PATH=./AppData/writedarker.db
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 `SECRET_KEY` is used to sign authentication tokens, `DB_PATH` specifies the
 SQLite database file, and `ACCESS_TOKEN_EXPIRE_MINUTES` controls how long
-generated tokens remain valid.
+generated tokens remain valid. `ALLOWED_ORIGINS` configures which origins can
+make cross-origin requests to the API (comma-separated list).
 
 ## Development Setup
 
