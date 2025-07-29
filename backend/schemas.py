@@ -15,7 +15,7 @@ class UserRead(UserBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -47,7 +47,7 @@ class DocumentRead(DocumentBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProjectBase(BaseModel):
@@ -70,7 +70,7 @@ class ProjectRead(ProjectBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ReferenceCreate(BaseModel):
@@ -86,7 +86,7 @@ class ReferenceRead(BaseModel):
     year: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SettingCreate(BaseModel):
@@ -102,4 +102,4 @@ class SettingRead(BaseModel):
     user_id: Optional[int] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True

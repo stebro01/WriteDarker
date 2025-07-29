@@ -4,6 +4,7 @@ sqlalchemy
 pydantic
 psycopg2-binary
 passlib[bcrypt]
+bcrypt>=4.0.0,<4.1.0
 python-jose[cryptography]
 PyPDF2
 httpx
