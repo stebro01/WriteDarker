@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from typing import List
 
 from .. import schemas, models
 from ..services import references as ref_service
@@ -45,4 +46,17 @@ def read_reference(ref_id: int, token: str, db: Session = Depends(get_db)):
     if not ref:
         raise HTTPException(status_code=404, detail="Reference not found")
     return ref
+
+
+@router.get("/project/{project_id}", response_model=List[schemas.ReferenceRead])
+def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
+    """List references for a project."""
+    user = get_current_user(token, db)
+    refs = (
+        db.query(models.Reference)
+        .join(models.Project)
+        .filter(models.Project.id == project_id, models.Project.author_id == user.id)
+        .all()
+    )
+    return refs
 

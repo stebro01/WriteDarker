@@ -1,6 +1,7 @@
 """API endpoints for document management."""
 
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
+from diff_match_patch import diff_match_patch
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from PyPDF2 import PdfReader
@@ -121,6 +122,54 @@ def update_document(
         doc.project_id = update.project_id
     if update.position is not None:
         doc.position = update.position
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+@router.patch("/{doc_id}", response_model=schemas.DocumentRead)
+def patch_document(doc_id: int, patch: str, token: str, db: Session = Depends(get_db)):
+    """Apply a diff/patch string to a document."""
+    user = get_current_user(token, db)
+    doc = (
+        db.query(models.Document)
+        .filter(models.Document.id == doc_id, models.Document.creator_id == user.id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    dmp = diff_match_patch()
+    patches = dmp.patch_fromText(patch)
+    new_text, _ = dmp.patch_apply(patches, doc.text or "")
+    if new_text != doc.text:
+        _add_revision(db, doc)
+        doc.text = new_text
+        db.commit()
+        db.refresh(doc)
+    return doc
+
+
+@router.post("/{doc_id}/pdf", response_model=schemas.DocumentRead)
+def upload_pdf(doc_id: int, token: str, pdf: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Attach or replace a PDF for a document."""
+    user = get_current_user(token, db)
+    doc = db.query(models.Document).filter(models.Document.id == doc_id, models.Document.creator_id == user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    doc.pdf = pdf.file.read()
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+@router.post("/{doc_id}/image", response_model=schemas.DocumentRead)
+def upload_image(doc_id: int, token: str, image: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Attach or replace an image for a document."""
+    user = get_current_user(token, db)
+    doc = db.query(models.Document).filter(models.Document.id == doc_id, models.Document.creator_id == user.id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    doc.image = image.file.read()
     db.commit()
     db.refresh(doc)
     return doc
