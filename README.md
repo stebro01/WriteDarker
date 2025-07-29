@@ -67,6 +67,13 @@ how long generated tokens remain valid. `ALLOWED_ORIGINS` configures which
 origins can make cross-origin requests to the API (comma-separated list). The
 `OPENAI_TOKEN` and `DOC_HISTORY_LIMIT` values are reserved for future features.
 
+## AI MCP Endpoint
+
+A minimal AI endpoint exists at `POST /ai/mcp`. It accepts JSON with a `prompt`
+field and responds with a mocked Master Control Program style message. The
+response is generated locally for now. Future releases may use
+`OPENAI_TOKEN` to proxy prompts to an actual AI service.
+
 ## Development Setup
 
 To install all JavaScript and Python dependencies and run both the
