@@ -1,22 +1,25 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-load_dotenv()
+# Load environment variables from the repository root
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 # Store application data inside the repository to avoid permission issues
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-APPDATA_PATH = os.path.join(ROOT_DIR, "AppData")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+APPDATA_PATH = ROOT_DIR / "AppData"
 DB_NAME = "writedarker.db"
 
-env_db_path = os.getenv("DB_PATH")
-if env_db_path:
-    DB_PATH = os.path.expanduser(env_db_path)
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+# Determine the full database path
+db_dir = os.getenv("DB_DIR")
+if db_dir:
+    DB_PATH = Path(os.path.expanduser(db_dir)) / DB_NAME
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 else:
-    DB_PATH = os.path.join(APPDATA_PATH, DB_NAME)
-    os.makedirs(APPDATA_PATH, exist_ok=True)
+    DB_PATH = APPDATA_PATH / DB_NAME
+    APPDATA_PATH.mkdir(parents=True, exist_ok=True)
 
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 

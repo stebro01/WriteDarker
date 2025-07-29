@@ -51,16 +51,21 @@ Configuration values can be supplied via environment variables or a `.env` file
 at the repository root. Important variables include:
 
 ```bash
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
+DB_DIR=./AppData
 SECRET_KEY=supersecretkey
-DB_PATH=./AppData/writedarker.db
+OPENAI_TOKEN=your-openai-token
+DOC_HISTORY_LIMIT=20
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-`SECRET_KEY` is used to sign authentication tokens, `DB_PATH` specifies the
-SQLite database file, and `ACCESS_TOKEN_EXPIRE_MINUTES` controls how long
-generated tokens remain valid. `ALLOWED_ORIGINS` configures which origins can
-make cross-origin requests to the API (comma-separated list).
+`SECRET_KEY` is used to sign authentication tokens. The database file is stored
+inside the folder specified by `DB_DIR`. `ACCESS_TOKEN_EXPIRE_MINUTES` controls
+how long generated tokens remain valid. `ALLOWED_ORIGINS` configures which
+origins can make cross-origin requests to the API (comma-separated list). The
+`OPENAI_TOKEN` and `DOC_HISTORY_LIMIT` values are reserved for future features.
 
 ## Development Setup
 
