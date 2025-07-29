@@ -2,7 +2,9 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-APPDATA_PATH = "/AppData"
+# Store application data inside the repository to avoid permission issues
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+APPDATA_PATH = os.path.join(ROOT_DIR, "AppData")
 DB_NAME = "writedarker.db"
 DB_PATH = os.path.join(APPDATA_PATH, DB_NAME)
 
