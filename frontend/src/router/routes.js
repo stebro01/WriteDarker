@@ -36,6 +36,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/library',
+    component: () => import('pages/LibraryPage.vue'),
+    beforeEnter: authGuard,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/legacy',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
