@@ -1,5 +1,6 @@
 import uuid
 from unittest.mock import patch
+import io
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -66,3 +67,59 @@ def test_list_filter_and_delete_references():
 
     get_resp = client.get(f"/references/{ref2['id']}", params={"token": token})
     assert get_resp.status_code == 404
+
+
+def test_upload_list_and_delete_reference_files():
+    token = get_token()
+    proj_resp = client.post(
+        "/projects/",
+        params={"token": token},
+        json={"label": "FileRefs", "description": "test"},
+    )
+    assert proj_resp.status_code == 200
+    proj_id = proj_resp.json()["id"]
+
+    def fake_fetch(q):
+        return {"title": q, "authors": "", "journal": "", "year": "2024"}
+
+    with patch("backend.api.references.ref_service.fetch_reference", side_effect=fake_fetch):
+        pdf_buf = io.BytesIO(b"%PDF-1.4")
+        pdf_resp = client.post(
+            "/references/",
+            params={"token": token},
+            data={"project_id": proj_id, "query": "pdfref"},
+            files={"pdf": ("paper.pdf", pdf_buf, "application/pdf")},
+        )
+        assert pdf_resp.status_code == 200
+        pdf_id = pdf_resp.json()["id"]
+
+        txt_buf = io.BytesIO(b"some text")
+        txt_resp = client.post(
+            "/references/",
+            params={"token": token},
+            data={"project_id": proj_id, "query": "txtref"},
+            files={"pdf": ("notes.txt", txt_buf, "text/plain")},
+        )
+        assert txt_resp.status_code == 200
+        txt_id = txt_resp.json()["id"]
+
+    proj_list = client.get(f"/references/project/{proj_id}", params={"token": token})
+    assert proj_list.status_code == 200
+    assert len(proj_list.json()) == 2
+
+    user_list = client.get("/references/user", params={"token": token})
+    assert user_list.status_code == 200
+    assert len(user_list.json()) == 2
+    by_title = {r["title"]: r for r in user_list.json()}
+    assert by_title["pdfref"]["filename"] == "paper.pdf"
+    assert by_title["pdfref"]["filetype"] == "application/pdf"
+    assert by_title["txtref"]["filename"] == "notes.txt"
+    assert by_title["txtref"]["filetype"] == "text/plain"
+
+    del_resp = client.delete(f"/references/{txt_id}", params={"token": token})
+    assert del_resp.status_code == 200
+    get_resp = client.get(f"/references/{txt_id}", params={"token": token})
+    assert get_resp.status_code == 404
+
+    client.delete(f"/references/{pdf_id}", params={"token": token})
+
