@@ -33,5 +33,23 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   })
 
+  // Global navigation guard for authentication
+  Router.beforeEach(async (to, from, next) => {
+    // Import user store dynamically to avoid circular dependency
+    const { useUserStore } = await import('../stores/user')
+    const userStore = useUserStore()
+    
+    // Initialize auth on first navigation if token exists
+    if (!userStore.isAuthenticated && userStore.hasValidToken()) {
+      try {
+        await userStore.initializeAuth()
+      } catch (error) {
+        console.warn('Failed to initialize auth during navigation:', error)
+      }
+    }
+    
+    next()
+  })
+
   return Router
 })

@@ -1,6 +1,24 @@
+import { authGuard, guestGuard } from './auth-guard'
+
 const routes = [
   {
     path: '/',
+    redirect: '/dashboard'
+  },
+  {
+    path: '/auth',
+    component: () => import('pages/AuthPage.vue'),
+    beforeEnter: guestGuard,
+    meta: { requiresGuest: true }
+  },
+  {
+    path: '/dashboard',
+    component: () => import('pages/DashboardPage.vue'),
+    beforeEnter: authGuard,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/legacy',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/IndexPage.vue') }],
   },
