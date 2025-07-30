@@ -26,11 +26,57 @@ def add_reference(
         raise HTTPException(status_code=404, detail="Project not found")
     data = ref_service.fetch_reference(query)
     pdf_bytes = pdf.file.read() if pdf else None
-    db_ref = models.Reference(project_id=proj.id, pdf=pdf_bytes, **data)
+    filename = pdf.filename if pdf else None
+    filetype = pdf.content_type if pdf else None
+    db_ref = models.Reference(
+        project_id=proj.id,
+        pdf=pdf_bytes,
+        filename=filename,
+        filetype=filetype,
+        **data,
+    )
     db.add(db_ref)
     db.commit()
     db.refresh(db_ref)
     return db_ref
+
+
+@router.get("/user", response_model=List[schemas.ReferenceRead])
+def list_user_references(
+    token: str,
+    search: str | None = None,
+    sort: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """List all references owned by the current user with optional search and sorting."""
+    user = get_current_user(token, db)
+    q = (
+        db.query(models.Reference)
+        .join(models.Project)
+        .filter(models.Project.author_id == user.id)
+    )
+    if search:
+        like = f"%{search}%"
+        q = q.filter(
+            models.Reference.title.ilike(like)
+            | models.Reference.authors.ilike(like)
+            | models.Reference.journal.ilike(like)
+            | models.Reference.year.ilike(like)
+        )
+    if sort:
+        desc = False
+        if sort.startswith("-"):
+            desc = True
+            sort_field = sort[1:]
+        else:
+            sort_field = sort
+        column = getattr(models.Reference, sort_field, None)
+        if column is not None:
+            q = q.order_by(column.desc() if desc else column)
+    return q.all()
+
+
+
 
 
 @router.get("/{ref_id}", response_model=schemas.ReferenceRead)
@@ -59,4 +105,23 @@ def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
         .all()
     )
     return refs
+
+
+
+
+@router.delete("/{ref_id}")
+def delete_reference(ref_id: int, token: str, db: Session = Depends(get_db)):
+    """Delete a reference owned by the current user."""
+    user = get_current_user(token, db)
+    ref = (
+        db.query(models.Reference)
+        .join(models.Project)
+        .filter(models.Reference.id == ref_id, models.Project.author_id == user.id)
+        .first()
+    )
+    if not ref:
+        raise HTTPException(status_code=404, detail="Reference not found")
+    db.delete(ref)
+    db.commit()
+    return {"message": "deleted"}
 

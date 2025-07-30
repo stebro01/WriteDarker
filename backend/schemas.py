@@ -95,6 +95,8 @@ class ReferenceRead(BaseModel):
     authors: str
     journal: str
     year: str
+    filename: Optional[str] = None
+    filetype: Optional[str] = None
 
     class Config:
         from_attributes = True
