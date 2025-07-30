@@ -30,36 +30,25 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useUserStore } from '../stores/user'
-import { useApiStore } from '../stores/api'
+import { ref, computed, onMounted } from 'vue'
+import { useReferenceStore } from '../stores/reference'
 import BaseButton from '../components/ui/BaseButton.vue'
 import FileUpload from '../components/ui/FileUpload.vue'
 
-const userStore = useUserStore()
+const referenceStore = useReferenceStore()
 const showUpload = ref(false)
 const filter = ref('')
 const sortKey = ref('title')
 const sortAsc = ref(true)
-const references = ref([])
-
-const apiStore = useApiStore()
-const axiosInstance = apiStore.createAxiosInstance()
 
 async function fetchRefs() {
-  if (!userStore.token) return
-  try {
-    const resp = await axiosInstance.get(`/references/project/1?token=${userStore.token}`)
-    references.value = resp.data || resp
-  } catch (err) {
-    console.error('failed to fetch', err)
-  }
+  await referenceStore.fetchAll(1)
 }
 
-fetchRefs()
+onMounted(fetchRefs)
 
 const filtered = computed(() => {
-  let res = references.value.filter(r => r.title.toLowerCase().includes(filter.value.toLowerCase()))
+  let res = referenceStore.references.filter(r => r.title.toLowerCase().includes(filter.value.toLowerCase()))
   res.sort((a, b) => {
     const va = a[sortKey.value] || ''
     const vb = b[sortKey.value] || ''
@@ -78,16 +67,13 @@ function sort(key) {
 }
 
 function remove(id) {
-  references.value = references.value.filter(r => r.id !== id)
+  referenceStore.delete(id)
 }
 
 async function uploadFiles(files) {
   for (const file of files) {
-    const form = new FormData()
-    form.append('pdf', file)
     try {
-      await axiosInstance.post(`/documents/?token=${userStore.token}`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
-      references.value.push({ id: Date.now() + Math.random(), title: file.name, year: '' })
+      await referenceStore.upload({ projectId: 1, query: file.name, file })
     } catch (err) {
       console.error('upload fail', err)
     }
