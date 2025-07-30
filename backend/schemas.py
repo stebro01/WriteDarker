@@ -85,7 +85,7 @@ class ProjectRead(ProjectBase):
 
 
 class ReferenceCreate(BaseModel):
-    project_id: int
+    project_ids: Optional[list[int]] = None
     query: str
 
 

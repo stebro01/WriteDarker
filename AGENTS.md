@@ -26,6 +26,7 @@ The DB is a sqlite db.
 - **users** – user account information (`id`, `username`, `password_hash`, `first_name`, `last_name`, `age`, `email`).
 - **documents** – uploaded or generated texts (`id`, `text`, `pdf`, `image`, `label`, `description`, `creator_id`, `project_id`, `notes`, `position`).
 - **projects** – group of documents (`id`, `label`, `description`, `author_id`, `coauthors`).
-- **references** – bibliographic references linked to projects (`id`, `title`, `authors`, `journal`, `year`, `pdf`, `project_id`).
+- **references** – bibliographic references (`id`, `title`, `authors`, `journal`, `year`, `pdf`, `owner_id`).
+- **project_references** – association table linking projects and references (`project_id`, `reference_id`).
 - **settings** – configuration values (`id`, `key`, `value`, `user_id`).
 - **document_revisions** – history of document text (`id`, `document_id`, `text`, `created_at`).

@@ -31,12 +31,16 @@ export const useReferenceStore = defineStore('reference', {
       }
     },
 
-    async upload({ projectId, query, file }) {
+    async upload({ projectIds = [], query, file }) {
       const userStore = useUserStore()
       if (!userStore.token) return
       const apiStore = useApiStore()
       const form = new FormData()
-      form.append('project_id', projectId)
+      if (Array.isArray(projectIds)) {
+        for (const pid of projectIds) {
+          form.append('project_ids', pid)
+        }
+      }
       form.append('query', query)
       if (file) form.append('pdf', file)
 

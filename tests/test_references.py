@@ -34,17 +34,17 @@ def test_list_filter_and_delete_references():
         ref1 = client.post(
             "/references/",
             params={"token": token},
-            data={"project_id": proj_id, "query": "alpha"},
+            data={"query": "alpha", "project_ids": str(proj_id)},
         ).json()
         ref2 = client.post(
             "/references/",
             params={"token": token},
-            data={"project_id": proj_id, "query": "beta"},
+            data={"query": "beta", "project_ids": str(proj_id)},
         ).json()
         ref3 = client.post(
             "/references/",
             params={"token": token},
-            data={"project_id": proj_id, "query": "gamma"},
+            data={"query": "gamma"},
         ).json()
 
     list_resp = client.get("/references/user", params={"token": token})
@@ -87,7 +87,7 @@ def test_upload_list_and_delete_reference_files():
         pdf_resp = client.post(
             "/references/",
             params={"token": token},
-            data={"project_id": proj_id, "query": "pdfref"},
+            data={"query": "pdfref", "project_ids": str(proj_id)},
             files={"pdf": ("paper.pdf", pdf_buf, "application/pdf")},
         )
         assert pdf_resp.status_code == 200
@@ -97,7 +97,7 @@ def test_upload_list_and_delete_reference_files():
         txt_resp = client.post(
             "/references/",
             params={"token": token},
-            data={"project_id": proj_id, "query": "txtref"},
+            data={"query": "txtref", "project_ids": str(proj_id)},
             files={"pdf": ("notes.txt", txt_buf, "text/plain")},
         )
         assert txt_resp.status_code == 200

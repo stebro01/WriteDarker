@@ -77,7 +77,7 @@ def test_full_workflow():
     ref_resp = client.post(
         "/references/",
         params={"token": token},
-        data={"project_id": project_id, "query": "test"},
+        data={"query": "test", "project_ids": str(project_id)},
         files=files,
     )
     assert ref_resp.status_code == 200

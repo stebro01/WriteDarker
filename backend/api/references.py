@@ -14,27 +14,33 @@ router = APIRouter()
 @router.post("/", response_model=schemas.ReferenceRead)
 def add_reference(
     token: str,
-    project_id: int = Form(...),
     query: str = Form(...),
+    project_ids: list[int] | None = Form(None),
     pdf: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
     """Add a reference to a project."""
     user = get_current_user(token, db)
-    proj = db.query(models.Project).filter(models.Project.id == project_id, models.Project.author_id == user.id).first()
-    if not proj:
-        raise HTTPException(status_code=404, detail="Project not found")
     data = ref_service.fetch_reference(query)
     pdf_bytes = pdf.file.read() if pdf else None
     filename = pdf.filename if pdf else None
     filetype = pdf.content_type if pdf else None
     db_ref = models.Reference(
-        project_id=proj.id,
+        owner_id=user.id,
         pdf=pdf_bytes,
         filename=filename,
         filetype=filetype,
         **data,
     )
+    if project_ids:
+        projects = (
+            db.query(models.Project)
+            .filter(models.Project.id.in_(project_ids), models.Project.author_id == user.id)
+            .all()
+        )
+        if len(projects) != len(set(project_ids)):
+            raise HTTPException(status_code=404, detail="Project not found")
+        db_ref.projects.extend(projects)
     db.add(db_ref)
     db.commit()
     db.refresh(db_ref)
@@ -50,11 +56,7 @@ def list_user_references(
 ):
     """List all references owned by the current user with optional search and sorting."""
     user = get_current_user(token, db)
-    q = (
-        db.query(models.Reference)
-        .join(models.Project)
-        .filter(models.Project.author_id == user.id)
-    )
+    q = db.query(models.Reference).filter(models.Reference.owner_id == user.id)
     if search:
         like = f"%{search}%"
         q = q.filter(
@@ -85,8 +87,7 @@ def read_reference(ref_id: int, token: str, db: Session = Depends(get_db)):
     user = get_current_user(token, db)
     ref = (
         db.query(models.Reference)
-        .join(models.Project)
-        .filter(models.Reference.id == ref_id, models.Project.author_id == user.id)
+        .filter(models.Reference.id == ref_id, models.Reference.owner_id == user.id)
         .first()
     )
     if not ref:
@@ -100,7 +101,7 @@ def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
     user = get_current_user(token, db)
     refs = (
         db.query(models.Reference)
-        .join(models.Project)
+        .join(models.Reference.projects)
         .filter(models.Project.id == project_id, models.Project.author_id == user.id)
         .all()
     )
@@ -115,8 +116,7 @@ def delete_reference(ref_id: int, token: str, db: Session = Depends(get_db)):
     user = get_current_user(token, db)
     ref = (
         db.query(models.Reference)
-        .join(models.Project)
-        .filter(models.Reference.id == ref_id, models.Project.author_id == user.id)
+        .filter(models.Reference.id == ref_id, models.Reference.owner_id == user.id)
         .first()
     )
     if not ref:
