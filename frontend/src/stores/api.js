@@ -20,9 +20,6 @@ export const useApiStore = defineStore('api', {
       const instance = axios.create({
         baseURL: API_BASE_URL,
         timeout: 10000,
-        headers: {
-          'Content-Type': 'application/json',
-        },
       })
 
       // Add request interceptor for authentication
