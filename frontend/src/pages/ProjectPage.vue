@@ -79,33 +79,41 @@
         </div>
 
         <!-- Sidebar content -->
-        <div v-if="!leftSidebarCollapsed" class="flex-1 overflow-y-auto p-3">
+        <div v-if="!leftSidebarCollapsed" class="column flex-1 overflow-y-auto p-2 sm:p-3 min-h-0 sidebar-scrollable">
           <!-- File upload area -->
-          <div class="mb-4 p-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-300 transition-colors cursor-pointer">
-            <div class="text-center">
-              <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="col-auto mb-2 p-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-300 transition-colors cursor-pointer">
+            <div class="row items-center justify-center q-gutter-x-sm">
+              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
               </svg>
-              <p class="text-xs text-gray-600">Drop files here or click to upload</p>
+              <span class="text-xs text-gray-600">Drop files or click</span>
             </div>
           </div>
 
           <!-- References section -->
-          <div class="mb-6">
-            <div class="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">References</div>
-            <div class="space-y-2">
+          <div class="col mb-2">
+            <button 
+              @click="referencesExpanded = !referencesExpanded"
+              class="w-full flex items-center justify-between text-xs font-medium text-gray-600 uppercase tracking-wide mb-1 hover:text-gray-800 transition-colors"
+            >
+              <span>References ({{ references.length }})</span>
+              <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': referencesExpanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div v-if="referencesExpanded" class="max-h-32 overflow-y-auto space-y-1">
               <div
                 v-for="reference in references"
                 :key="reference.id"
-                class="p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                class="p-1 sm:p-1.5 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer transition-colors"
               >
                 <div class="flex items-start">
-                  <svg class="w-4 h-4 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3 h-3 text-red-500 mt-0.5 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
                   <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-gray-900 truncate">{{ reference.title }}</p>
-                    <p class="text-xs text-gray-500">{{ reference.type }} • {{ reference.pages }} pages</p>
+                    <p class="text-xs font-medium text-gray-900 truncate leading-tight">{{ reference.title }}</p>
+                    <p class="text-xs text-gray-500 leading-tight">{{ reference.type }} • {{ reference.pages }}p</p>
                   </div>
                 </div>
               </div>
@@ -113,21 +121,29 @@
           </div>
 
           <!-- Media files section -->
-          <div class="mb-6">
-            <div class="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">Media Files</div>
-            <div class="space-y-2">
+          <div class="col mb-2">
+            <button 
+              @click="mediaFilesExpanded = !mediaFilesExpanded"
+              class="w-full flex items-center justify-between text-xs font-medium text-gray-600 uppercase tracking-wide mb-1 hover:text-gray-800 transition-colors"
+            >
+              <span>Media Files ({{ mediaFiles.length }})</span>
+              <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': mediaFilesExpanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            <div v-if="mediaFilesExpanded" class="max-h-32 overflow-y-auto space-y-1">
               <div
                 v-for="media in mediaFiles"
                 :key="media.id"
-                class="p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                class="p-1 sm:p-1.5 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer transition-colors"
               >
                 <div class="flex items-start">
-                  <svg class="w-4 h-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3 h-3 text-blue-500 mt-0.5 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                   </svg>
                   <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-gray-900 truncate">{{ media.name }}</p>
-                    <p class="text-xs text-gray-500">{{ media.type }} • {{ media.size }}</p>
+                    <p class="text-xs font-medium text-gray-900 truncate leading-tight">{{ media.name }}</p>
+                    <p class="text-xs text-gray-500 leading-tight">{{ media.type }} • {{ media.size }}</p>
                   </div>
                 </div>
               </div>
@@ -136,7 +152,7 @@
         </div>
 
         <!-- Collapsed sidebar icons -->
-        <div v-else class="flex-1 flex flex-col items-center py-4 space-y-3">
+        <div v-else class="flex-1 flex flex-col items-center py-2 sm:py-4 space-y-2 sm:space-y-3 overflow-y-auto min-h-0">
           <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -151,22 +167,22 @@
       </div>
 
       <!-- Center - Main Document Area -->
-      <div class="flex-1 flex flex-col bg-white">
+      <div class="flex-1 flex flex-col bg-white min-h-0">
         <!-- Document editor -->
-        <div class="flex-1 p-4 sm:p-6 overflow-y-auto">
-          <div class="max-w-4xl mx-auto">
+        <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0">
+          <div class="max-w-4xl mx-auto flex flex-col flex-1 min-h-0 w-full">
             <!-- Document title -->
             <input
               v-model="documentTitle"
-              class="w-full text-sm sm:text-base font-medium text-gray-900 bg-transparent border-none outline-none mb-4 sm:mb-6 placeholder-gray-400 focus:placeholder-gray-300"
+              class="w-full text-sm sm:text-base font-medium text-gray-900 bg-transparent border-none outline-none mb-4 sm:mb-6 placeholder-gray-400 focus:placeholder-gray-300 flex-shrink-0"
               placeholder="Untitled Document"
             />
             
             <!-- Document content -->
-            <div class="prose prose-sm sm:prose-base max-w-none">
+            <div class="flex-1 flex flex-col min-h-0">
               <textarea
                 v-model="documentContent"
-                class="w-full h-80 sm:h-96 resize-none border-none outline-none text-gray-700 placeholder-gray-400 leading-relaxed text-sm focus:placeholder-gray-300"
+                class="w-full flex-1 min-h-32 resize-none border-none outline-none text-gray-700 placeholder-gray-400 leading-relaxed text-sm focus:placeholder-gray-300"
                 placeholder="Start writing your document here..."
               ></textarea>
             </div>
@@ -174,9 +190,9 @@
         </div>
 
         <!-- AI Chat section -->
-        <div class="border-t border-gray-200 bg-gray-50/50">
+        <div class="border-t border-gray-200 bg-gray-50/50 flex flex-col" :style="chatCollapsed ? 'height: 48px;' : 'height: 200px;'">
           <!-- Chat header -->
-          <div class="px-4 sm:px-6 py-3 bg-white border-b border-gray-200">
+          <div class="px-3 sm:px-4 md:px-6 py-2 sm:py-3 bg-white border-b border-gray-200 flex-shrink-0">
             <div class="flex items-center justify-between">
               <div class="flex items-center">
                 <div class="w-5 h-5 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full flex items-center justify-center mr-2">
@@ -198,7 +214,7 @@
           </div>
 
           <!-- Chat messages -->
-          <div v-if="!chatCollapsed" class="h-48 sm:h-64 overflow-y-auto p-3 sm:p-4">
+          <div v-if="!chatCollapsed" class="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 min-h-0">
             <div class="space-y-3">
               <div
                 v-for="message in chatMessages"
@@ -224,7 +240,7 @@
           </div>
 
           <!-- Chat input -->
-          <div v-if="!chatCollapsed" class="p-3 sm:p-4 bg-white border-t border-gray-200">
+          <div v-if="!chatCollapsed" class="p-2 sm:p-3 md:p-4 bg-white border-t border-gray-200 flex-shrink-0">
             <div class="flex space-x-2 sm:space-x-3">
               <input
                 v-model="chatInput"
@@ -264,7 +280,7 @@
           </div>
 
           <!-- Sidebar content -->
-          <div class="flex-1 overflow-y-auto p-3">
+          <div class="flex-1 overflow-y-auto p-3 min-h-0">
             <!-- Document stats -->
             <div class="mb-6">
               <div class="text-xs font-medium text-gray-600 uppercase tracking-wide mb-3">Document Stats</div>
@@ -348,7 +364,7 @@
           </div>
           
           <!-- Collapsed sidebar icons -->
-          <div class="flex-1 flex flex-col items-center py-4 space-y-3">
+          <div class="flex-1 flex flex-col items-center py-4 space-y-3 overflow-y-auto min-h-0">
             <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H9z"></path>
@@ -378,6 +394,8 @@ const router = useRouter()
 const leftSidebarCollapsed = ref(false)
 const rightSidebarCollapsed = ref(false)
 const chatCollapsed = ref(false)
+const referencesExpanded = ref(true)
+const mediaFilesExpanded = ref(true)
 
 // Project data
 const projectTitle = ref('Research Paper Draft')
