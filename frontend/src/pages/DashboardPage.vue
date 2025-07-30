@@ -233,21 +233,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { useReferenceStore } from '../stores/reference'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import FileUpload from '../components/ui/FileUpload.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const referenceStore = useReferenceStore()
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)
 const showUpload = ref(false)
-const pdfCount = ref(12)
-const articleCount = ref(8)
+const pdfCount = computed(() => referenceStore.pdfCount)
+const articleCount = computed(() => referenceStore.referenceCount)
 
 // Handle logout
 const handleLogout = async () => {
@@ -273,18 +275,10 @@ const navigateToProject = (type) => {
 }
 
 const uploadFiles = async (files) => {
-  if (!userStore.token || !files.length) return
-  const { useApiStore } = await import('../stores/api')
-  const apiStore = useApiStore()
-  const axiosInstance = apiStore.createAxiosInstance()
+  if (!files.length) return
   for (const file of files) {
-    const form = new FormData()
-    form.append('pdf', file)
     try {
-      await axiosInstance.post(`/documents/?token=${userStore.token}`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
-      pdfCount.value++
+      await referenceStore.upload({ projectId: 1, query: file.name, file })
     } catch (err) {
       console.error('Upload failed', err)
     }
@@ -300,6 +294,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  referenceStore.fetchAll()
 })
 
 onUnmounted(() => {
