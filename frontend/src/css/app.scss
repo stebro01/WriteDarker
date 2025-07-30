@@ -1,1 +1,10 @@
 // app global css in SCSS form
+
+// Reset heading styles to prevent interference with Tailwind utilities
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  margin: 0;
+  padding: 0;
+}

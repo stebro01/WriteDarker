@@ -11,7 +11,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.828 2.828 0 114 4L9 19.5l-4.5-1L9 14.5z"></path>
               </svg>
             </div>
-            <h1 class="text-lg font-medium text-gray-800">WriteDarker</h1>
+            <h1 class="text-base font-medium text-gray-800">WriteDarker</h1>
           </div>
 
           <!-- User menu -->
@@ -69,7 +69,7 @@
       <!-- Welcome section -->
       <div class="mb-6">
         <div class="text-center mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 mb-2">Welcome back, {{ userStore.userDisplayName }}!</h2>
+          <h2 class="text-lg font-medium text-gray-900 mb-2">Welcome back, {{ userStore.userDisplayName }}!</h2>
           <p class="text-gray-600">Ready to continue your writing journey?</p>
         </div>
       </div>
@@ -82,7 +82,7 @@
             <div class="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
               <div class="text-2xl font-bold text-white">{{ userStore.userInitials }}</div>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ userStore.userDisplayName }}</h3>
+            <div class="text-base font-medium text-gray-900 mb-2">{{ userStore.userDisplayName }}</div>
             <p class="text-sm text-gray-600 mb-4">@{{ userStore.currentUser?.username }}</p>
             
             <div class="space-y-2 text-left bg-orange-50/50 rounded-lg p-3">
@@ -110,14 +110,14 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Projects</h3>
+            <div class="text-base font-medium text-gray-900 mb-2">Projects</div>
             <p class="text-sm text-gray-600 mb-4">Manage your writing projects</p>
             
             <div class="space-y-3">
               <div class="bg-blue-50/50 rounded-lg p-3">
                 <div class="flex items-center justify-between mb-2">
                   <span class="text-sm font-medium text-gray-700">Active Projects</span>
-                  <span class="text-lg font-bold text-blue-600">3</span>
+                  <span class="text-base font-semibold text-blue-600">3</span>
                 </div>
                 <div class="text-xs text-gray-500">2 in progress, 1 completed</div>
               </div>
@@ -156,18 +156,18 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
               </svg>
             </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">References</h3>
+            <div class="text-base font-medium text-gray-900 mb-2">References</div>
             <p class="text-sm text-gray-600 mb-4">Research materials & sources</p>
             
             <div class="space-y-3">
               <div class="bg-green-50/50 rounded-lg p-3">
                 <div class="grid grid-cols-2 gap-3 text-center">
                   <div>
-                    <div class="text-lg font-bold text-green-600">12</div>
+                    <div class="text-base font-semibold text-green-600">12</div>
                     <div class="text-xs text-gray-500">PDFs</div>
                   </div>
                   <div>
-                    <div class="text-lg font-bold text-green-600">8</div>
+                    <div class="text-base font-semibold text-green-600">8</div>
                     <div class="text-xs text-gray-500">Articles</div>
                   </div>
                 </div>
@@ -194,7 +194,7 @@
         <template #header>
           <div class="flex items-center justify-between">
             <div>
-              <h3 class="text-xl font-semibold text-gray-900">Recent Activity</h3>
+              <div class="text-base font-medium text-gray-900">Recent Activity</div>
               <p class="text-gray-600 mt-1">Your latest writing activity</p>
             </div>
             <div class="text-sm text-gray-500">
