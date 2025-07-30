@@ -84,6 +84,8 @@ class Reference(Base):
     journal = Column(String)
     year = Column(String)
     pdf = Column(LargeBinary)
+    filename = Column(String)
+    filetype = Column(String)
     project_id = Column(Integer, ForeignKey("projects.id"))
 
     project = relationship("Project", back_populates="references")
