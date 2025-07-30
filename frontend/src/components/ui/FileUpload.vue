@@ -22,7 +22,7 @@
 import { ref } from 'vue'
 import BaseModal from './BaseModal.vue'
 
-const props = defineProps({
+defineProps({
   show: { type: Boolean, default: false },
   accept: { type: String, default: '.pdf,.txt' },
   multiple: { type: Boolean, default: true }
