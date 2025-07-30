@@ -79,75 +79,98 @@
         </div>
 
         <!-- Sidebar content -->
-        <div v-if="!leftSidebarCollapsed" class="column flex-1 overflow-y-auto p-2 sm:p-3 min-h-0 sidebar-scrollable">
+        <div v-if="!leftSidebarCollapsed" class="column flex-1 overflow-y-auto min-h-0 sidebar-scrollable">
           <!-- File upload area -->
-          <div class="col-auto mb-2 p-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-300 transition-colors cursor-pointer">
-            <div class="row items-center justify-center q-gutter-x-sm">
-              <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-              <span class="text-xs text-gray-600">Drop files or click</span>
-            </div>
-          </div>
-
-          <!-- References section -->
-          <div class="col mb-2">
-            <button 
-              @click="referencesExpanded = !referencesExpanded"
-              class="w-full flex items-center justify-between text-xs font-medium text-gray-600 uppercase tracking-wide mb-1 hover:text-gray-800 transition-colors"
-            >
-              <span>References ({{ references.length }})</span>
-              <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': referencesExpanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div v-if="referencesExpanded" class="max-h-32 overflow-y-auto space-y-1">
-              <div
-                v-for="reference in references"
-                :key="reference.id"
-                class="p-1 sm:p-1.5 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer transition-colors"
-              >
-                <div class="flex items-start">
-                  <svg class="w-3 h-3 text-red-500 mt-0.5 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-gray-900 truncate leading-tight">{{ reference.title }}</p>
-                    <p class="text-xs text-gray-500 leading-tight">{{ reference.type }} • {{ reference.pages }}p</p>
-                  </div>
-                </div>
+          <div class="col-auto q-pa-sm">
+            <div class="q-pa-sm border-2 border-dashed text-grey-6 rounded cursor-pointer hover:border-orange-6 transition-colors" style="border-color: #d1d5db;">
+              <div class="row items-center justify-center q-gutter-x-sm">
+                <q-icon name="cloud_upload" size="20px" color="grey-6" />
+                <span class="text-caption text-grey-6">Drop files or click</span>
               </div>
             </div>
           </div>
 
-          <!-- Media files section -->
-          <div class="col mb-2">
-            <button 
-              @click="mediaFilesExpanded = !mediaFilesExpanded"
-              class="w-full flex items-center justify-between text-xs font-medium text-gray-600 uppercase tracking-wide mb-1 hover:text-gray-800 transition-colors"
-            >
-              <span>Media Files ({{ mediaFiles.length }})</span>
-              <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-180': mediaFilesExpanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            <div v-if="mediaFilesExpanded" class="max-h-32 overflow-y-auto space-y-1">
-              <div
-                v-for="media in mediaFiles"
-                :key="media.id"
-                class="p-1 sm:p-1.5 bg-gray-50 rounded hover:bg-gray-100 cursor-pointer transition-colors"
+          <!-- References and Media Files List -->
+          <div class="col">
+            <q-list dense class="q-pa-none">
+              <!-- References section -->
+              <q-expansion-item
+                v-model="referencesExpanded" 
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
               >
-                <div class="flex items-start">
-                  <svg class="w-3 h-3 text-blue-500 mt-0.5 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-gray-900 truncate leading-tight">{{ media.name }}</p>
-                    <p class="text-xs text-gray-500 leading-tight">{{ media.type }} • {{ media.size }}</p>
-                  </div>
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    References ({{ references.length }})
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
+                  <q-list dense class="q-pa-none">
+                    <q-item 
+                      v-for="reference in references" 
+                      :key="reference.id"
+                      dense
+                      clickable
+                      class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
+                    >
+                      <q-item-section avatar class="min-width-auto q-pr-xs">
+                        <q-icon name="description" size="14px" color="red-5" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
+                          {{ reference.title }}
+                        </q-item-label>
+                        <q-item-label caption class="text-grey-6">
+                          {{ reference.type }} • {{ reference.pages }}p
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
                 </div>
-              </div>
-            </div>
+              </q-expansion-item>
+
+              <!-- Media Files section -->
+              <q-expansion-item
+                v-model="mediaFilesExpanded"
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
+              >
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    Media Files ({{ mediaFiles.length }})
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
+                  <q-list dense class="q-pa-none">
+                    <q-item 
+                      v-for="media in mediaFiles" 
+                      :key="media.id"
+                      dense
+                      clickable
+                      class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
+                    >
+                      <q-item-section avatar class="min-width-auto q-pr-xs">
+                        <q-icon name="image" size="14px" color="blue-5" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
+                          {{ media.name }}
+                        </q-item-label>
+                        <q-item-label caption class="text-grey-6">
+                          {{ media.type }} • {{ media.size }}
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </q-expansion-item>
+            </q-list>
           </div>
         </div>
 
@@ -280,73 +303,125 @@
           </div>
 
           <!-- Sidebar content -->
-          <div class="flex-1 overflow-y-auto p-3 min-h-0">
-            <!-- Document stats -->
-            <div class="mb-6">
-              <div class="text-xs font-medium text-gray-600 uppercase tracking-wide mb-3">Document Stats</div>
-              <div class="space-y-3">
-                <div class="bg-gray-50 rounded-lg p-3">
-                  <div class="text-center">
-                    <div class="text-base font-semibold text-gray-900">{{ documentStats.words }}</div>
-                    <div class="text-xs text-gray-500">Words</div>
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <q-list dense class="q-pa-none">
+              <!-- Document Stats section -->
+              <q-expansion-item
+                v-model="documentStatsExpanded" 
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
+              >
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    Document Stats
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-sm">
+                  <!-- Main word count -->
+                  <div class="q-mb-sm q-pa-sm bg-grey-2 rounded text-center">
+                    <div class="text-h6 text-weight-bold text-grey-9">{{ documentStats.words }}</div>
+                    <div class="text-caption text-grey-6">Words</div>
+                  </div>
+                  
+                  <!-- Secondary stats -->
+                  <div class="row q-gutter-xs">
+                    <div class="col q-pa-xs bg-grey-2 rounded text-center">
+                      <div class="text-caption text-weight-bold text-grey-9">{{ documentStats.characters }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Characters</div>
+                    </div>
+                    <div class="col q-pa-xs bg-grey-2 rounded text-center">
+                      <div class="text-caption text-weight-bold text-grey-9">{{ documentStats.paragraphs }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Paragraphs</div>
+                    </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <div class="bg-gray-50 rounded-lg p-2 text-center">
-                    <div class="text-xs font-semibold text-gray-900">{{ documentStats.characters }}</div>
-                    <div class="text-xs text-gray-500">Characters</div>
-                  </div>
-                  <div class="bg-gray-50 rounded-lg p-2 text-center">
-                    <div class="text-xs font-semibold text-gray-900">{{ documentStats.paragraphs }}</div>
-                    <div class="text-xs text-gray-500">Paragraphs</div>
-                  </div>
+              </q-expansion-item>
+
+              <!-- Writing Tools section -->
+              <q-expansion-item
+                v-model="writingToolsExpanded"
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
+              >
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    Writing Tools
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-sm column q-gutter-y-xs">
+                  <q-btn 
+                    outline
+                    dense
+                    size="sm"
+                    color="grey-7"
+                    class="q-py-xs text-caption"
+                    icon="spellcheck"
+                    label="Grammar Check"
+                  />
+                  <q-btn 
+                    outline
+                    dense
+                    size="sm"
+                    color="grey-7"
+                    class="q-py-xs text-caption"
+                    icon="auto_fix_high"
+                    label="Improve Writing"
+                  />
+                  <q-btn 
+                    outline
+                    dense
+                    size="sm"
+                    color="grey-7"
+                    class="q-py-xs text-caption"
+                    icon="format_quote"
+                    label="Citation Generator"
+                  />
                 </div>
-              </div>
-            </div>
+              </q-expansion-item>
 
-            <!-- Writing tools -->
-            <div class="mb-6">
-              <div class="text-xs font-medium text-gray-600 uppercase tracking-wide mb-3">Writing Tools</div>
-              <div class="space-y-2">
-                <BaseButton variant="outline" size="sm" full-width>
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                  </svg>
-                  Grammar Check
-                </BaseButton>
-                <BaseButton variant="outline" size="sm" full-width>
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                  </svg>
-                  Improve Writing
-                </BaseButton>
-                <BaseButton variant="outline" size="sm" full-width>
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                  </svg>
-                  Citation Generator
-                </BaseButton>
-              </div>
-            </div>
-
-            <!-- Export options -->
-            <div class="mb-6">
-              <div class="text-xs font-medium text-gray-600 uppercase tracking-wide mb-3">Export Options</div>
-              <div class="space-y-2">
-                <BaseButton variant="secondary" size="sm" full-width>
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                  Export as PDF
-                </BaseButton>
-                <BaseButton variant="outline" size="sm" full-width>
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                  </svg>
-                  Export as Word
-                </BaseButton>
-              </div>
-            </div>
+              <!-- Export Options section -->
+              <q-expansion-item
+                v-model="exportOptionsExpanded"
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
+              >
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    Export Options
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-sm column q-gutter-y-xs">
+                  <q-btn 
+                    unelevated
+                    dense
+                    size="sm"
+                    color="orange-6"
+                    text-color="white"
+                    class="q-py-xs text-caption"
+                    icon="picture_as_pdf"
+                    label="Export as PDF"
+                  />
+                  <q-btn 
+                    outline
+                    dense
+                    size="sm"
+                    color="grey-7"
+                    class="q-py-xs text-caption"
+                    icon="description"
+                    label="Export as Word"
+                  />
+                </div>
+              </q-expansion-item>
+            </q-list>
           </div>
         </template>
         
@@ -364,18 +439,34 @@
           </div>
           
           <!-- Collapsed sidebar icons -->
-          <div class="flex-1 flex flex-col items-center py-4 space-y-3 overflow-y-auto min-h-0">
-            <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H9z"></path>
-              </svg>
-            </button>
-            <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              </svg>
-            </button>
+          <div class="column items-center q-py-sm q-gutter-y-sm overflow-y-auto min-h-0">
+            <q-btn 
+              flat
+              round
+              dense
+              size="sm"
+              color="grey-6"
+              icon="bar_chart"
+              class="q-pa-xs"
+            />
+            <q-btn 
+              flat
+              round
+              dense
+              size="sm"
+              color="grey-6"
+              icon="edit"
+              class="q-pa-xs"
+            />
+            <q-btn 
+              flat
+              round
+              dense
+              size="sm"
+              color="grey-6"
+              icon="download"
+              class="q-pa-xs"
+            />
           </div>
         </template>
       </div>
@@ -396,6 +487,9 @@ const rightSidebarCollapsed = ref(false)
 const chatCollapsed = ref(false)
 const referencesExpanded = ref(true)
 const mediaFilesExpanded = ref(true)
+const documentStatsExpanded = ref(true)
+const writingToolsExpanded = ref(true)
+const exportOptionsExpanded = ref(true)
 
 // Project data
 const projectTitle = ref('Research Paper Draft')
