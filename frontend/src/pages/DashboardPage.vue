@@ -163,24 +163,24 @@
               <div class="bg-green-50/50 rounded-lg p-3">
                 <div class="grid grid-cols-2 gap-3 text-center">
                   <div>
-                    <div class="text-base font-semibold text-green-600">12</div>
+                    <div class="text-base font-semibold text-green-600">{{ pdfCount }}</div>
                     <div class="text-xs text-gray-500">PDFs</div>
                   </div>
                   <div>
-                    <div class="text-base font-semibold text-green-600">8</div>
+                    <div class="text-base font-semibold text-green-600">{{ articleCount }}</div>
                     <div class="text-xs text-gray-500">Articles</div>
                   </div>
                 </div>
               </div>
-              
+
               <div class="space-y-2">
-                <BaseButton variant="secondary" size="sm" full-width>
+                <BaseButton variant="secondary" size="sm" full-width @click="showUpload = true">
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                   </svg>
                   Upload References
                 </BaseButton>
-                <BaseButton variant="outline" size="sm" full-width>
+                <BaseButton variant="outline" size="sm" full-width @click="router.push('/library')">
                   Browse Library
                 </BaseButton>
               </div>
@@ -228,6 +228,7 @@
         </div>
       </BaseCard>
     </main>
+    <FileUpload :show="showUpload" @close="showUpload = false" @files-selected="uploadFiles" />
   </div>
 </template>
 
@@ -237,12 +238,16 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
+import FileUpload from '../components/ui/FileUpload.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)
+const showUpload = ref(false)
+const pdfCount = ref(12)
+const articleCount = ref(8)
 
 // Handle logout
 const handleLogout = async () => {
@@ -264,6 +269,25 @@ const navigateToProject = (type) => {
   } else if (type === 'existing') {
     // Navigate to projects list page
     router.push('/projects')
+  }
+}
+
+const uploadFiles = async (files) => {
+  if (!userStore.token || !files.length) return
+  const { useApiStore } = await import('../stores/api')
+  const apiStore = useApiStore()
+  const axiosInstance = apiStore.createAxiosInstance()
+  for (const file of files) {
+    const form = new FormData()
+    form.append('pdf', file)
+    try {
+      await axiosInstance.post(`/documents/?token=${userStore.token}`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      pdfCount.value++
+    } catch (err) {
+      console.error('Upload failed', err)
+    }
   }
 }
 
