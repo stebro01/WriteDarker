@@ -18,9 +18,8 @@ from .db import Base, engine, SessionLocal
 from .models import User
 from .services.auth import get_password_hash
 
-# Configure CORS
-origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
-origins = [origin.strip() for origin in origins_env.split(",") if origin.strip()]
+# Configure CORS - Allow all origins for development
+origins = ["*"]  # Allow all origins
 
 
 # Ensure database exists

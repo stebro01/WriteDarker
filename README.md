@@ -58,7 +58,6 @@ SECRET_KEY=supersecretkey
 OPENAI_TOKEN=your-openai-token
 DOC_HISTORY_LIMIT=20
 ACCESS_TOKEN_EXPIRE_MINUTES=30
-ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 `SECRET_KEY` is used to sign authentication tokens. The database file is stored
