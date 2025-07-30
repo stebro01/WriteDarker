@@ -278,7 +278,7 @@ const uploadFiles = async (files) => {
   if (!files.length) return
   for (const file of files) {
     try {
-      await referenceStore.upload({ projectId: 1, query: file.name, file })
+      await referenceStore.upload({ projectIds: [1], query: file.name, file })
     } catch (err) {
       console.error('Upload failed', err)
     }

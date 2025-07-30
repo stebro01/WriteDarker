@@ -8,6 +8,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
+    Table,
 )
 from datetime import datetime
 from sqlalchemy.orm import relationship
@@ -22,6 +23,14 @@ __all__ = [
     "Reference",
     "Setting",
 ]
+
+# Association table between projects and references for many-to-many relation
+project_reference_link = Table(
+    "project_references",
+    Base.metadata,
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
+    Column("reference_id", Integer, ForeignKey("references.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -70,7 +79,11 @@ class Project(Base):
 
     author = relationship("User")
     documents = relationship("Document", back_populates="project")
-    references = relationship("Reference", back_populates="project")
+    references = relationship(
+        "Reference",
+        secondary=project_reference_link,
+        back_populates="projects",
+    )
 
 
 class Reference(Base):
@@ -86,9 +99,14 @@ class Reference(Base):
     pdf = Column(LargeBinary)
     filename = Column(String)
     filetype = Column(String)
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
-    project = relationship("Project", back_populates="references")
+    owner = relationship("User")
+    projects = relationship(
+        "Project",
+        secondary=project_reference_link,
+        back_populates="references",
+    )
 
 
 class Setting(Base):

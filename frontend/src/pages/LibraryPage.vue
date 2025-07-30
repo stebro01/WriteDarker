@@ -73,7 +73,7 @@ function remove(id) {
 async function uploadFiles(files) {
   for (const file of files) {
     try {
-      await referenceStore.upload({ projectId: 1, query: file.name, file })
+      await referenceStore.upload({ projectIds: [1], query: file.name, file })
     } catch (err) {
       console.error('upload fail', err)
     }
