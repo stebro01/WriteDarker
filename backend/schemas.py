@@ -34,6 +34,9 @@ class DocumentBase(BaseModel):
     label: Optional[str] = None
     description: Optional[str] = None
     notes: Optional[str] = None
+    tag: Optional[str] = None
+    filename: Optional[str] = None
+    filetype: Optional[str] = None
     project_id: Optional[int] = None
     position: Optional[int] = None
 
