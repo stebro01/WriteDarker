@@ -42,7 +42,8 @@ const sortKey = ref('title')
 const sortAsc = ref(true)
 
 async function fetchRefs() {
-  await referenceStore.fetchAll(1)
+  // fetch all references for the current user
+  await referenceStore.fetchAll()
 }
 
 onMounted(fetchRefs)
@@ -71,12 +72,13 @@ function remove(id) {
 }
 
 async function uploadFiles(files) {
-  for (const file of files) {
-    try {
-      await referenceStore.upload({ projectIds: [1], query: file.name, file })
-    } catch (err) {
-      console.error('upload fail', err)
+    for (const file of files) {
+      try {
+        // upload the reference without linking to a specific project
+        await referenceStore.upload({ query: file.name, file })
+      } catch (err) {
+        console.error('upload fail', err)
+      }
     }
-  }
 }
 </script>
