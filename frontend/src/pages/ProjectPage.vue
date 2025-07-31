@@ -58,25 +58,19 @@
 
         <!-- Sidebar content -->
         <div v-if="!leftSidebarCollapsed" class="column flex-1 overflow-y-auto min-h-0 sidebar-scrollable">
-          <!-- File upload area -->
+          <!-- Add Files Button -->
           <div class="col-auto q-pa-sm">
-            <div
-              :class="[
-                'q-pa-sm border-2 border-dashed text-grey-6 rounded transition-colors',
-                isNewProject ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-orange-6'
-              ]"
-              style="border-color: #d1d5db;"
-              @click="isNewProject ? null : handleDropZoneClick"
-              @dragover.prevent="isNewProject ? null : $event"
-              @drop.prevent="isNewProject ? null : handleDropZoneDrop"
+            <q-btn
+              :disable="!projectId || isNewProject"
+              @click="handleAddFilesClick"
+              outline
+              color="orange-6"
+              size="sm"
+              class="full-width q-py-sm"
+              icon="add"
             >
-              <div class="row items-center justify-center q-gutter-x-sm">
-                <q-icon name="cloud_upload" size="20px" color="grey-6" />
-                <span class="text-caption text-grey-6">
-                  {{ isNewProject ? 'Save project first to upload files' : 'Drop files or click' }}
-                </span>
-              </div>
-            </div>
+              <span class="q-ml-xs">{{ (!projectId || isNewProject) ? 'Save project first' : 'Add Files' }}</span>
+            </q-btn>
           </div>
 
           <!-- References and Media Files List -->
@@ -607,15 +601,12 @@ const references = computed(() => referenceStore.references)
 const mediaFiles = computed(() => mediaStore.media)
 
 // File handling
-function handleDropZoneClick() {
+function handleAddFilesClick() {
   droppedFiles.value = []
   showFileAction.value = true
 }
 
-function handleDropZoneDrop(e) {
-  droppedFiles.value = Array.from(e.dataTransfer.files)
-  showFileAction.value = true
-}
+// Note: Drag and drop functionality removed in favor of button-based file selection
 
 async function handleUploadPdf() {
   if (droppedFiles.value.length) {
