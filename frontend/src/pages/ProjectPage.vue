@@ -1,60 +1,38 @@
 <template>
   <div class="h-screen bg-gray-50 flex flex-col overflow-hidden">
     <!-- Header -->
-    <header class="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200 flex-shrink-0">
-      <div class="px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-14 min-h-[3.5rem]">
-          <!-- Project info and navigation -->
-          <div class="flex items-center space-x-4">
-            <button
-              @click="goBack"
-              class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            
-            <div class="flex items-center">
-              <div class="w-6 h-6 bg-gradient-to-r from-orange-400 to-orange-600 rounded-md flex items-center justify-center mr-2">
-                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.828 2.828 0 114 4L9 19.5l-4.5-1L9 14.5z"></path>
-                </svg>
-              </div>
-              <h1 class="text-sm font-medium text-gray-900">{{ projectTitle }}</h1>
-            </div>
-          </div>
-
-          <!-- Header actions -->
-          <div class="flex items-center space-x-2 sm:space-x-3">
-            <BaseButton variant="outline" size="sm" class="hidden sm:flex">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-              Export
-            </BaseButton>
-            <!-- Mobile export button -->
-            <BaseButton variant="outline" size="sm" class="flex sm:hidden p-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
-              </svg>
-            </BaseButton>
-            <BaseButton variant="primary" size="sm" class="hidden sm:flex">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Save
-            </BaseButton>
-            <!-- Mobile save button -->
-            <BaseButton variant="primary" size="sm" class="flex sm:hidden p-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </BaseButton>
-          </div>
-        </div>
-      </div>
-    </header>
+    <PageHeader 
+      :title="projectTitle" 
+      :show-back-button="true"
+      back-route="/dashboard"
+    >
+      <template #actions>
+        <BaseButton variant="outline" size="sm" class="hidden sm:flex">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+          Export
+        </BaseButton>
+        <!-- Mobile export button -->
+        <BaseButton variant="outline" size="sm" class="flex sm:hidden p-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+          </svg>
+        </BaseButton>
+        <BaseButton variant="primary" size="sm" class="hidden sm:flex">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Save
+        </BaseButton>
+        <!-- Mobile save button -->
+        <BaseButton variant="primary" size="sm" class="flex sm:hidden p-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </BaseButton>
+      </template>
+    </PageHeader>
 
     <!-- Main content area -->
     <div class="flex-1 flex overflow-hidden">
@@ -476,10 +454,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import BaseButton from '../components/ui/BaseButton.vue'
-
-const router = useRouter()
+import PageHeader from '../components/ui/PageHeader.vue'
 
 // Sidebar states
 const leftSidebarCollapsed = ref(false)
@@ -542,10 +518,6 @@ const documentStats = computed(() => {
 })
 
 // Methods
-const goBack = () => {
-  router.push('/dashboard')
-}
-
 const sendMessage = () => {
   if (!chatInput.value.trim()) return
   

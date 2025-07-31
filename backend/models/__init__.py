@@ -8,6 +8,7 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
+    Table,
 )
 from datetime import datetime
 from sqlalchemy.orm import relationship
@@ -23,6 +24,22 @@ __all__ = [
     "Setting",
 ]
 
+# Association table between projects and references for many-to-many relation
+project_reference_link = Table(
+    "project_references",
+    Base.metadata,
+    Column("project_id", Integer, ForeignKey("projects.id"), primary_key=True),
+    Column("reference_id", Integer, ForeignKey("references.id"), primary_key=True),
+)
+
+# Association table between references and owners for many-to-many relation
+reference_owner_link = Table(
+    "reference_to_owner",
+    Base.metadata,
+    Column("reference_id", Integer, ForeignKey("references.id"), primary_key=True),
+    Column("owner_id", Integer, ForeignKey("users.id"), primary_key=True),
+)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -35,6 +52,11 @@ class User(Base):
     email = Column(String, unique=True, index=True)
 
     documents = relationship("Document", back_populates="owner")
+    shared_references = relationship(
+        "Reference",
+        secondary=reference_owner_link,
+        back_populates="shared_with",
+    )
 
 class Document(Base):
     """Represents an uploaded or generated document."""
@@ -70,7 +92,11 @@ class Project(Base):
 
     author = relationship("User")
     documents = relationship("Document", back_populates="project")
-    references = relationship("Reference", back_populates="project")
+    references = relationship(
+        "Reference",
+        secondary=project_reference_link,
+        back_populates="projects",
+    )
 
 
 class Reference(Base):
@@ -84,9 +110,30 @@ class Reference(Base):
     journal = Column(String)
     year = Column(String)
     pdf = Column(LargeBinary)
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    filename = Column(String)
+    filetype = Column(String)
+    file_hash = Column(String, index=True)  # SHA-256 hash of the file content
+    
+    # PubMed-specific fields
+    pubmed_id = Column(String, index=True)  # PubMed ID (PMID)
+    doi = Column(String)  # Digital Object Identifier
+    abstract = Column(Text)  # Article abstract
+    keywords = Column(String)  # Comma-separated keywords
+    publication_date = Column(String)  # Publication date
+    url = Column(String)  # URL to the article
+    citation = Column(Text)  # Formatted citation string
 
-    project = relationship("Project", back_populates="references")
+    projects = relationship(
+        "Project",
+        secondary=project_reference_link,
+        back_populates="references",
+    )
+    # Many-to-many relationship with users who have access to this reference
+    shared_with = relationship(
+        "User",
+        secondary=reference_owner_link,
+        back_populates="shared_references",
+    )
 
 
 class Setting(Base):

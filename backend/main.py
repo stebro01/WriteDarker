@@ -14,6 +14,7 @@ from .api.documents import router as docs_router
 from .api.projects import router as projects_router
 from .api.references import router as references_router
 from .api.settings import router as settings_router
+from .api.pubmed import router as pubmed_router
 from .db import Base, engine, SessionLocal
 from .models import User
 from .services.auth import get_password_hash
@@ -62,4 +63,5 @@ app.include_router(references_router, prefix="/references", tags=["references"])
 app.include_router(settings_router, prefix="/settings", tags=["settings"])
 app.include_router(crud_router, prefix="/db", tags=["database"])
 app.include_router(ai_router, prefix="/ai", tags=["ai"])
+app.include_router(pubmed_router, prefix="/pubmed", tags=["pubmed"])
 

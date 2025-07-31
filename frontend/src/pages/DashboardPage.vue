@@ -99,6 +99,19 @@
                 <span class="text-gray-700">Active Writer</span>
               </div>
             </div>
+            
+            <BaseButton 
+              @click="router.push('/user-details')"
+              variant="outline" 
+              size="sm" 
+              full-width
+              class="mt-4 group-hover:shadow-md transition-shadow"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+              Edit Details
+            </BaseButton>
           </div>
         </BaseCard>
 
@@ -163,24 +176,24 @@
               <div class="bg-green-50/50 rounded-lg p-3">
                 <div class="grid grid-cols-2 gap-3 text-center">
                   <div>
-                    <div class="text-base font-semibold text-green-600">12</div>
+                    <div class="text-base font-semibold text-green-600">{{ pdfCount }}</div>
                     <div class="text-xs text-gray-500">PDFs</div>
                   </div>
                   <div>
-                    <div class="text-base font-semibold text-green-600">8</div>
+                    <div class="text-base font-semibold text-green-600">{{ articleCount }}</div>
                     <div class="text-xs text-gray-500">Articles</div>
                   </div>
                 </div>
               </div>
-              
+
               <div class="space-y-2">
-                <BaseButton variant="secondary" size="sm" full-width>
+                <BaseButton variant="secondary" size="sm" full-width @click="showUpload = true">
                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                   </svg>
                   Upload References
                 </BaseButton>
-                <BaseButton variant="outline" size="sm" full-width>
+                <BaseButton variant="outline" size="sm" full-width @click="router.push('/library')">
                   Browse Library
                 </BaseButton>
               </div>
@@ -228,21 +241,28 @@
         </div>
       </BaseCard>
     </main>
+    <FileUpload :show="showUpload" @close="showUpload = false" @files-selected="uploadFiles" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { useReferenceStore } from '../stores/reference'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
+import FileUpload from '../components/ui/FileUpload.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const referenceStore = useReferenceStore()
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)
+const showUpload = ref(false)
+const pdfCount = computed(() => referenceStore.pdfCount)
+const articleCount = computed(() => referenceStore.referenceCount)
 
 // Handle logout
 const handleLogout = async () => {
@@ -267,6 +287,22 @@ const navigateToProject = (type) => {
   }
 }
 
+const uploadFiles = async (files) => {
+  if (!files.length) return
+  for (const file of files) {
+    const result = await referenceStore.upload({ query: file.name, file })
+    if (!result.success) {
+      if (result.isDuplicate) {
+        // Show user-friendly duplicate message
+        alert(`Duplicate file: ${result.error}`)
+      } else {
+        console.error('Upload failed:', result.error)
+        alert(`Upload failed: ${result.error}`)
+      }
+    }
+  }
+}
+
 // Close user menu when clicking outside
 const handleClickOutside = (event) => {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
@@ -276,6 +312,7 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  referenceStore.fetchAll()
 })
 
 onUnmounted(() => {

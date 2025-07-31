@@ -29,3 +29,52 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+# ---------------------------------------------------------------------------
+# Lightweight auto-migration helpers (only for SQLite dev database)
+# ---------------------------------------------------------------------------
+
+def _ensure_columns_exist():
+    """For simple development setups make sure new columns exist.
+
+    This avoids having to reset the database every time a model changes.
+    It is *not* a replacement for proper Alembic migrations, but good
+    enough during rapid prototyping.
+    """
+
+    from sqlalchemy import text
+
+    required = {
+        "references": {
+            "pdf": "BLOB",  
+            "filename": "TEXT",
+            "filetype": "TEXT",
+            "file_hash": "TEXT",
+            "pubmed_id": "TEXT",
+            "doi": "TEXT",
+            "abstract": "TEXT",
+            "keywords": "TEXT",
+            "publication_date": "TEXT",
+            "url": "TEXT",
+            "citation": "TEXT",
+        }
+    }
+
+    with engine.connect() as conn:
+        for table, cols in required.items():
+            existing = {
+                row[1] for row in conn.execute(text(f"PRAGMA table_info('{table}')"))
+            }
+            for col, sqltype in cols.items():
+                if col not in existing:
+                    conn.execute(text(f"ALTER TABLE \"{table}\" ADD COLUMN \"{col}\" {sqltype}"))
+                    print(f"[DB] Added missing column '{col}' to '{table}' table")
+
+# Run auto-migrations as soon as the module is imported (after engine exists)
+try:
+    _ensure_columns_exist()
+except Exception as exc:
+    # Don't crash the app if something goes wrong – just log and continue
+    import traceback, sys
+    traceback.print_exception(exc, file=sys.stderr)
+

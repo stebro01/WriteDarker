@@ -116,6 +116,22 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+    // Change user password
+    async changePassword(currentPassword, newPassword) {
+      if (!this.token) {
+        throw new Error('Not authenticated')
+      }
+
+      this.loading = true
+      try {
+        const apiStore = useApiStore()
+        await apiStore.changePassword(currentPassword, newPassword, this.token)
+        return true
+      } finally {
+        this.loading = false
+      }
+    },
+
     // Logout user
     async logout() {
       try {

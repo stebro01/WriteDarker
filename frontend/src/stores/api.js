@@ -20,9 +20,6 @@ export const useApiStore = defineStore('api', {
       const instance = axios.create({
         baseURL: API_BASE_URL,
         timeout: 10000,
-        headers: {
-          'Content-Type': 'application/json',
-        },
       })
 
       // Add request interceptor for authentication
@@ -112,6 +109,12 @@ export const useApiStore = defineStore('api', {
 
     async updateUser(userData, token) {
       return await this.put(`/auth/me?token=${token}`, userData, token)
+    },
+
+    async changePassword(currentPassword, newPassword, token) {
+      return await this.put(`/auth/me?token=${token}`, {
+        password: newPassword
+      }, token)
     },
 
     async logout() {

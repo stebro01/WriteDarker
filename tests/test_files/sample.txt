@@ -1,0 +1,10 @@
+This is a sample text file for testing the preview functionality.
+
+It contains multiple lines of text to demonstrate how text files are displayed in the preview component.
+
+Features to test:
+- Line breaks are preserved
+- Special characters: @#$%^&*()
+- Unicode: 🎉 📄 ✨
+
+End of sample file.

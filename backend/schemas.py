@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -85,19 +85,71 @@ class ProjectRead(ProjectBase):
 
 
 class ReferenceCreate(BaseModel):
-    project_id: int
+    project_ids: Optional[list[int]] = None
     query: str
+
+
+class PubMedSearchRequest(BaseModel):
+    query: str
+    max_results: Optional[int] = 20
+
+
+class PubMedArticle(BaseModel):
+    pubmed_id: Optional[str] = None
+    title: str
+    abstract: Optional[str] = None
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    publication_date: Optional[str] = None
+    doi: Optional[str] = None
+    keywords: Optional[List[str]] = None
+    url: Optional[str] = None
+    citation: Optional[str] = None
+
+
+class PubMedSearchResponse(BaseModel):
+    articles: List[PubMedArticle]
+    total_results: int
+
+
+class PubMedImportRequest(BaseModel):
+    pubmed_id: str
+    link_to_reference_id: Optional[int] = None  # Link to existing PDF reference
 
 
 class ReferenceRead(BaseModel):
     id: int
     title: str
-    authors: str
-    journal: str
-    year: str
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    year: Optional[str] = None
+    filename: Optional[str] = None
+    filetype: Optional[str] = None
+    file_hash: Optional[str] = None
+    # PubMed fields
+    pubmed_id: Optional[str] = None
+    doi: Optional[str] = None
+    abstract: Optional[str] = None
+    keywords: Optional[str] = None
+    publication_date: Optional[str] = None
+    url: Optional[str] = None
+    citation: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class ReferenceUpdate(BaseModel):
+    title: Optional[str] = None
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    year: Optional[str] = None
+    doi: Optional[str] = None
+    abstract: Optional[str] = None
+    keywords: Optional[str] = None
+    publication_date: Optional[str] = None
+    url: Optional[str] = None
+    citation: Optional[str] = None
 
 
 class SettingCreate(BaseModel):

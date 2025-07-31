@@ -11,3 +11,4 @@ httpx
 python-multipart
 python-dotenv
 diff-match-patch
+pymed

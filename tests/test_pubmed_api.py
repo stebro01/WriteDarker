@@ -122,4 +122,7 @@ def test_fetch_pubmed_reference_network_error():
         "authors": "",
         "journal": "",
         "year": "",
+        "filename": None,
+        "filetype": None,
+        "file_hash": None,
     }
