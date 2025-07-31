@@ -84,16 +84,32 @@ class PubMedService:
                 author_names = []
                 for author in authors:
                     if hasattr(author, 'lastname') and hasattr(author, 'firstname'):
-                        name = f"{author.lastname}, {author.firstname}"
+                        # Format as "Lastname Initials" or "Lastname, Firstname"
                         if hasattr(author, 'initials') and author.initials:
-                            name = f"{author.lastname}, {author.initials}"
+                            name = f"{author.lastname} {author.initials}"
+                        else:
+                            name = f"{author.lastname}, {author.firstname}"
                         author_names.append(name)
                     elif isinstance(author, str):
                         author_names.append(author)
+                    elif isinstance(author, dict):
+                        # Handle dictionary format from pymed
+                        lastname = author.get('lastname', '')
+                        firstname = author.get('firstname', '')
+                        initials = author.get('initials', '')
+                        
+                        if lastname:
+                            if initials:
+                                name = f"{lastname} {initials}"
+                            elif firstname:
+                                name = f"{lastname}, {firstname}"
+                            else:
+                                name = lastname
+                            author_names.append(name)
                     else:
                         author_names.append(str(author))
                 
-                return "; ".join(author_names)
+                return ", ".join(author_names)
             else:
                 return str(authors)
         except Exception as e:

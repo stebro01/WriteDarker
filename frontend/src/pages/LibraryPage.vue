@@ -47,17 +47,17 @@
               class="text-left hover:text-blue-600 transition-colors"
               :class="{ 'text-blue-600 cursor-pointer': canPreview(ref), 'cursor-default': !canPreview(ref) }"
             >
-              {{ ref.title }}
+              {{ truncateText(ref.title, 250) }}
             </button>
             <div v-if="ref.abstract" class="text-xs text-gray-500 mt-1">
-              {{ ref.abstract.substring(0, 100) }}{{ ref.abstract.length > 100 ? '...' : '' }}
+              {{ truncateText(ref.abstract, 250) }}
             </div>
           </td>
           <td class="p-2 text-sm text-gray-600">
-            {{ ref.authors || '-' }}
+            {{ truncateText(ref.authors || '-', 250) }}
           </td>
           <td class="p-2 text-sm text-gray-600">
-            {{ ref.journal || '-' }}
+            {{ truncateText(ref.journal || '-', 250) }}
           </td>
           <td class="p-2 text-sm text-gray-600">
             {{ ref.year || '-' }}
@@ -86,13 +86,13 @@
                 size="sm" 
                 @click="previewReference(ref)"
               >
-                Preview
+                {{ ref.filename ? 'Preview' : 'View Article' }}
               </BaseButton>
               <BaseButton 
                 v-if="ref.url" 
                 variant="outline" 
                 size="sm" 
-                @click="window.open(ref.url, '_blank')"
+                @click="openPubMedUrl(ref.url)"
               >
                 PubMed
               </BaseButton>
@@ -116,6 +116,7 @@
     
     <FileUpload :show="showUpload" @close="showUpload = false" @files-selected="uploadFiles" />
     <FilePreview :show="showPreview" :reference="selectedReference" @close="closePreview" />
+    <PubMedArticlePreview :show="showPubMedPreview" :reference="selectedPubMedReference" @close="closePubMedPreview" />
     <PubMedSearch :show="showPubMedSearch" @close="showPubMedSearch = false" @import-success="handlePubMedImport" />
     
     <!-- Confirmation Dialog -->
@@ -142,6 +143,7 @@ import { useReferenceStore } from '../stores/reference'
 import BaseButton from '../components/ui/BaseButton.vue'
 import FileUpload from '../components/ui/FileUpload.vue'
 import FilePreview from '../components/ui/FilePreview.vue'
+import PubMedArticlePreview from '../components/ui/PubMedArticlePreview.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import PubMedSearch from '../components/ui/PubMedSearch.vue'
@@ -149,13 +151,13 @@ import PubMedSearch from '../components/ui/PubMedSearch.vue'
 const referenceStore = useReferenceStore()
 const showUpload = ref(false)
 const showPreview = ref(false)
+const showPubMedPreview = ref(false)
+const showPubMedSearch = ref(false)
 const selectedReference = ref(null)
+const selectedPubMedReference = ref(null)
 const filter = ref('')
 const sortKey = ref('title')
 const sortAsc = ref(true)
-
-// PubMed search state
-const showPubMedSearch = ref(false)
 
 // Delete confirmation state
 const showDeleteConfirm = ref(false)
@@ -215,34 +217,48 @@ async function confirmDelete() {
 }
 
 function canPreview(reference) {
-  if (!reference.filename) return false
+  // If it has a filename, check if it's a supported file type
+  if (reference.filename) {
+    const filename = reference.filename.toLowerCase()
+    const filetype = (reference.filetype || '').toLowerCase()
+    
+    // Check for supported file types
+    return (
+      // PDFs
+      filetype.includes('pdf') || filename.endsWith('.pdf') ||
+      // Images
+      filetype.includes('image') || filename.endsWith('.png') || filename.endsWith('.jpg') || 
+      filename.endsWith('.jpeg') || filename.endsWith('.gif') || filename.endsWith('.webp') ||
+      // Text files
+      filetype.includes('text') || filetype.includes('plain') || filename.endsWith('.txt') || 
+      filename.endsWith('.dat') || filename.endsWith('.json')
+    )
+  }
   
-  const filename = reference.filename.toLowerCase()
-  const filetype = (reference.filetype || '').toLowerCase()
-  
-  // Check for supported file types
-  return (
-    // PDFs
-    filetype.includes('pdf') || filename.endsWith('.pdf') ||
-    // Images
-    filetype.includes('image') || filename.endsWith('.png') || filename.endsWith('.jpg') || 
-    filename.endsWith('.jpeg') || filename.endsWith('.gif') || filename.endsWith('.webp') ||
-    // Text files
-    filetype.includes('text') || filetype.includes('plain') || filename.endsWith('.txt') || 
-    filename.endsWith('.dat') || filename.endsWith('.json')
-  )
+  // If no filename but has PubMed ID, it can be viewed as a PubMed article
+  return reference.pubmed_id ? true : false
 }
 
 function previewReference(reference) {
-  if (canPreview(reference)) {
+  if (reference.filename && canPreview(reference)) {
+    // For references with files, show file preview
     selectedReference.value = reference
     showPreview.value = true
+  } else if (reference.pubmed_id) {
+    // For PubMed articles without files, show PubMed preview
+    selectedPubMedReference.value = reference
+    showPubMedPreview.value = true
   }
 }
 
 function closePreview() {
   showPreview.value = false
   selectedReference.value = null
+}
+
+function closePubMedPreview() {
+  showPubMedPreview.value = false
+  selectedPubMedReference.value = null
 }
 
 async function uploadFiles(files) {
@@ -265,4 +281,17 @@ function handlePubMedImport() {
   fetchRefs()
   showPubMedSearch.value = false
 }
+
+function openPubMedUrl(url) {
+  window.open(url, '_blank')
+}
+
+function truncateText(text, maxLength) {
+  if (!text || text.length <= maxLength) {
+    return text
+  }
+  return text.substring(0, maxLength) + '...'
+}
+
+
 </script>

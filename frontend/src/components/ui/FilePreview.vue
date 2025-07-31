@@ -177,6 +177,20 @@ const downloadFile = () => {
 const loadFileContent = async () => {
   if (!props.reference?.id || !props.show) return
   
+  // Don't try to load file content for PubMed articles without files
+  if (props.reference.pubmed_id && !props.reference.filename) {
+    error.value = 'This is a PubMed article without an associated file. Use the "View" button to see article details.'
+    loading.value = false
+    return
+  }
+  
+  // Don't try to load if there's no file
+  if (!props.reference.filename) {
+    error.value = 'No file available for preview'
+    loading.value = false
+    return
+  }
+  
   loading.value = true
   error.value = null
   
