@@ -60,7 +60,13 @@
         <div v-if="!leftSidebarCollapsed" class="column flex-1 overflow-y-auto min-h-0 sidebar-scrollable">
           <!-- File upload area -->
           <div class="col-auto q-pa-sm">
-            <div class="q-pa-sm border-2 border-dashed text-grey-6 rounded cursor-pointer hover:border-orange-6 transition-colors" style="border-color: #d1d5db;">
+            <div
+              class="q-pa-sm border-2 border-dashed text-grey-6 rounded cursor-pointer hover:border-orange-6 transition-colors"
+              style="border-color: #d1d5db;"
+              @click="handleDropZoneClick"
+              @dragover.prevent
+              @drop.prevent="handleDropZoneDrop"
+            >
               <div class="row items-center justify-center q-gutter-x-sm">
                 <q-icon name="cloud_upload" size="20px" color="grey-6" />
                 <span class="text-caption text-grey-6">Drop files or click</span>
@@ -400,8 +406,9 @@
                 </div>
               </q-expansion-item>
             </q-list>
-          </div>
-        </template>
+    </div>
+
+  </template>
         
         <template v-else>
           <!-- Sidebar header collapsed -->
@@ -436,26 +443,72 @@
               icon="edit"
               class="q-pa-xs"
             />
-            <q-btn 
-              flat
-              round
-              dense
-              size="sm"
-              color="grey-6"
-              icon="download"
-              class="q-pa-xs"
-            />
-          </div>
-        </template>
+              <q-btn
+                flat
+                round
+                dense
+                size="sm"
+                color="grey-6"
+                icon="download"
+                class="q-pa-xs"
+              />
+            </div>
+          </template>
+        </div>
       </div>
     </div>
-  </div>
+    <FileActionDialog
+      :show="showFileAction"
+      @close="showFileAction = false"
+      @upload-pdf="handleUploadPdf"
+      @search-pubmed="handleSearchPubMed"
+      @upload-media="handleUploadMedia"
+    />
+
+    <FileUpload
+      :show="showPdfUpload"
+      accept=".pdf"
+      @close="showPdfUpload = false"
+      @files-selected="uploadPdfFiles"
+    />
+
+    <FileUpload
+      :show="showMediaUpload"
+      accept="image/*,audio/*,video/*"
+      @close="showMediaUpload = false"
+      @files-selected="uploadMediaFiles"
+    />
+
+    <PubMedSearch
+      :show="showPubMedSearch"
+      @close="showPubMedSearch = false"
+    />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import BaseButton from '../components/ui/BaseButton.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import FileActionDialog from '../components/project/FileActionDialog.vue'
+import FileUpload from '../components/ui/FileUpload.vue'
+import PubMedSearch from '../components/ui/PubMedSearch.vue'
+import { useReferenceStore } from '../stores/reference'
+import { useMediaStore } from '../stores/media'
+
+// Stores and routing
+const route = useRoute()
+const referenceStore = useReferenceStore()
+const mediaStore = useMediaStore()
+
+// Dialog states
+const showFileAction = ref(false)
+const showPdfUpload = ref(false)
+const showMediaUpload = ref(false)
+const showPubMedSearch = ref(false)
+const droppedFiles = ref([])
+
+const projectId = computed(() => route.params.id)
 
 // Sidebar states
 const leftSidebarCollapsed = ref(false)
@@ -506,6 +559,58 @@ const mediaFiles = ref([
   { id: 1, name: 'research_chart.png', type: 'Image', size: '2.3 MB' },
   { id: 2, name: 'interview_audio.mp3', type: 'Audio', size: '15.7 MB' }
 ])
+
+// File handling
+function handleDropZoneClick() {
+  droppedFiles.value = []
+  showFileAction.value = true
+}
+
+function handleDropZoneDrop(e) {
+  droppedFiles.value = Array.from(e.dataTransfer.files)
+  showFileAction.value = true
+}
+
+async function handleUploadPdf() {
+  if (droppedFiles.value.length) {
+    await uploadPdfFiles(droppedFiles.value)
+    droppedFiles.value = []
+    showFileAction.value = false
+  } else {
+    showFileAction.value = false
+    showPdfUpload.value = true
+  }
+}
+
+async function uploadPdfFiles(files) {
+  for (const file of files) {
+    await referenceStore.upload({
+      projectIds: projectId.value ? [projectId.value] : [],
+      query: file.name,
+      file
+    })
+  }
+}
+
+function handleSearchPubMed() {
+  showFileAction.value = false
+  showPubMedSearch.value = true
+}
+
+async function handleUploadMedia() {
+  if (droppedFiles.value.length) {
+    await uploadMediaFiles(droppedFiles.value)
+    droppedFiles.value = []
+    showFileAction.value = false
+  } else {
+    showFileAction.value = false
+    showMediaUpload.value = true
+  }
+}
+
+async function uploadMediaFiles(files) {
+  await mediaStore.upload({ projectId: projectId.value, files })
+}
 
 // Document stats computed property
 const documentStats = computed(() => {
