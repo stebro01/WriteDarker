@@ -86,7 +86,7 @@
               <MediaList
                 v-model:expanded="mediaFilesExpanded"
                 :media="mediaFiles"
-                @select="previewMedia"
+                @select="editMedia"
               />
             </q-list>
           </div>
@@ -424,7 +424,14 @@
       @close="showReferenceSearch = false"
       @added="handleReferenceAdded"
     />
-</template>
+
+    <MediaEditDialog
+      :show="showMediaEdit"
+      :media="selectedMedia"
+      @close="showMediaEdit = false"
+      @updated="handleMediaUpdated"
+    />
+  </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
@@ -437,6 +444,7 @@ import PubMedSearch from '../components/ui/PubMedSearch.vue'
 import ReferenceSearchDialog from '../components/project/ReferenceSearchDialog.vue'
 import ReferenceList from '../components/project/ReferenceList.vue'
 import MediaList from '../components/project/MediaList.vue'
+import MediaEditDialog from '../components/ui/MediaEditDialog.vue'
 import { useReferenceStore } from '../stores/reference'
 import { useMediaStore } from '../stores/media'
 import { useUserStore } from '../stores/user'
@@ -453,6 +461,8 @@ const showPdfUpload = ref(false)
 const showMediaUpload = ref(false)
 const showPubMedSearch = ref(false)
 const showReferenceSearch = ref(false)
+const showMediaEdit = ref(false)
+const selectedMedia = ref(null)
 const droppedFiles = ref([])
 
 const projectId = computed(() => route.params.id)
@@ -547,7 +557,9 @@ async function handleUploadMedia() {
 }
 
 async function uploadMediaFiles(files) {
-  await mediaStore.upload({ projectId: projectId.value, files })
+  for (const file of files) {
+    await mediaStore.upload({ projectId: projectId.value, file, label: file.name })
+  }
 }
 
 function openReference(ref) {
@@ -555,9 +567,16 @@ function openReference(ref) {
   window.open(`http://localhost:8000/references/${ref.id}/file?token=${userStore.token}`, '_blank')
 }
 
-function previewMedia(media) {
-  if (!media?.id) return
-  window.open(`http://localhost:8000/documents/${media.id}/file?token=${userStore.token}`, '_blank')
+function editMedia(media) {
+  if (!media) return
+  selectedMedia.value = media
+  showMediaEdit.value = true
+}
+
+async function handleMediaUpdated() {
+  if (projectId.value) {
+    await mediaStore.fetch(projectId.value)
+  }
 }
 
 // Document stats computed property
