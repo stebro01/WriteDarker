@@ -1,5 +1,7 @@
 """API endpoints for project CRUD operations."""
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -7,6 +9,33 @@ from .. import schemas, models
 from .users import get_db, get_current_user
 
 router = APIRouter()
+
+
+@router.get("/", response_model=List[schemas.ProjectSummary])
+def list_projects(token: str, db: Session = Depends(get_db)):
+    """Return all projects for the current user with summary information."""
+    user = get_current_user(token, db)
+    projects = db.query(models.Project).filter(models.Project.author_id == user.id).all()
+    summaries: List[schemas.ProjectSummary] = []
+    for proj in projects:
+        docs = proj.documents
+        doc_count = len(docs)
+        word_count = sum(len((d.text or "").split()) for d in docs)
+        reference_count = len(proj.references)
+        media_count = sum(1 for d in docs if d.pdf is not None or d.image is not None)
+        summaries.append(
+            schemas.ProjectSummary(
+                id=proj.id,
+                label=proj.label,
+                description=proj.description,
+                coauthors=proj.coauthors,
+                document_count=doc_count,
+                word_count=word_count,
+                reference_count=reference_count,
+                media_count=media_count,
+            )
+        )
+    return summaries
 
 
 @router.post("/", response_model=schemas.ProjectRead)
