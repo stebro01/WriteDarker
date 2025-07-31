@@ -117,26 +117,7 @@
         <!-- Document editor -->
         <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0">
           <div class="max-w-4xl mx-auto flex flex-col flex-1 min-h-0 w-full">
-            <!-- Project Information -->
-        <div v-if="currentProject && !isNewProject" class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div class="flex items-center justify-between mb-2">
-            <h2 class="text-sm font-semibold text-blue-900">Project Information</h2>
-            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">ID: {{ currentProject.id }}</span>
-          </div>
-          <div class="space-y-1">
-            <div class="text-sm text-blue-800">
-              <strong>Name:</strong> {{ currentProject.label }}
-            </div>
-            <div v-if="currentProject.description" class="text-sm text-blue-700">
-              <strong>Description:</strong> {{ currentProject.description }}
-            </div>
-            <div v-if="currentProject.coauthors" class="text-sm text-blue-700">
-              <strong>Co-authors:</strong> {{ currentProject.coauthors }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Document title -->
+            <!-- Document title -->
             <input
               v-model="documentTitle"
               class="w-full text-sm sm:text-base font-medium text-gray-900 bg-transparent border-none outline-none mb-4 sm:mb-6 placeholder-gray-400 focus:placeholder-gray-300 flex-shrink-0"
@@ -247,6 +228,59 @@
           <!-- Sidebar content -->
           <div class="flex-1 overflow-y-auto min-h-0">
             <q-list dense class="q-pa-none">
+              <!-- Project Information section -->
+              <q-expansion-item
+                v-if="currentProject && !isNewProject"
+                v-model="projectInfoExpanded" 
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
+              >
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    Project Information
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-sm">
+                  <!-- Project ID badge with edit button -->
+                  <div class="q-mb-sm q-pa-sm bg-blue-1 rounded">
+                    <div class="row items-center justify-between">
+                      <div class="text-caption text-weight-bold text-blue-9">ID: {{ currentProject.id }}</div>
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        size="xs"
+                        color="blue-7"
+                        icon="edit"
+                        @click="showProjectEdit = true"
+                        class="q-ml-sm"
+                      >
+                        <q-tooltip class="text-caption">Edit Project</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
+                  
+                  <!-- Project details -->
+                  <div class="column q-gutter-y-xs">
+                    <div class="q-pa-xs bg-grey-2 rounded">
+                      <div class="text-caption text-weight-bold text-grey-9">{{ currentProject.label }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Project Name</div>
+                    </div>
+                    <div v-if="currentProject.description" class="q-pa-xs bg-grey-2 rounded">
+                      <div class="text-caption text-grey-9">{{ currentProject.description }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Description</div>
+                    </div>
+                    <div v-if="currentProject.coauthors" class="q-pa-xs bg-grey-2 rounded">
+                      <div class="text-caption text-grey-9">{{ currentProject.coauthors }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Co-authors</div>
+                    </div>
+                  </div>
+                </div>
+              </q-expansion-item>
+
               <!-- Document Stats section -->
               <q-expansion-item
                 v-model="documentStatsExpanded" 
@@ -462,6 +496,14 @@
       @close="handleNewProjectClose"
       @created="handleProjectCreated"
     />
+
+    <ProjectEditDialog
+      :show="showProjectEdit"
+      :project="currentProject"
+      @close="showProjectEdit = false"
+      @updated="handleProjectUpdated"
+      @deleted="handleProjectDeleted"
+    />
   </template>
 
 <script setup>
@@ -477,6 +519,7 @@ import ReferenceList from '../components/project/ReferenceList.vue'
 import MediaList from '../components/project/MediaList.vue'
 import MediaEditDialog from '../components/ui/MediaEditDialog.vue'
 import NewProjectDialog from '../components/project/NewProjectDialog.vue'
+import ProjectEditDialog from '../components/project/ProjectEditDialog.vue'
 import { useReferenceStore } from '../stores/reference'
 import { useMediaStore } from '../stores/media'
 import { useUserStore } from '../stores/user'
@@ -498,6 +541,7 @@ const showPubMedSearch = ref(false)
 const showReferenceSearch = ref(false)
 const showMediaEdit = ref(false)
 const showNewProject = ref(false)
+const showProjectEdit = ref(false)
 const selectedMedia = ref(null)
 const droppedFiles = ref([])
 
@@ -523,6 +567,7 @@ const mediaFilesExpanded = ref(true)
 const documentStatsExpanded = ref(true)
 const writingToolsExpanded = ref(true)
 const exportOptionsExpanded = ref(true)
+const projectInfoExpanded = ref(true)
 
 // Project data
 const projectTitle = computed(() => {
@@ -783,6 +828,18 @@ async function handleProjectCreated(project) {
   console.log('Project created:', project)
   // Navigate to the new project page
   await router.push(`/project/${project.id}`)
+}
+
+async function handleProjectUpdated(updatedProject) {
+  console.log('Project updated:', updatedProject)
+  // Update the current project data
+  currentProject.value = updatedProject
+}
+
+async function handleProjectDeleted(deletedProject) {
+  console.log('Project deleted:', deletedProject)
+  // Navigate back to dashboard
+  await router.push('/dashboard')
 }
 </script>
 
