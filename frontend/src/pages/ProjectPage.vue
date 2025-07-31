@@ -79,7 +79,7 @@
             <q-list dense class="q-pa-none">
               <!-- References section -->
               <q-expansion-item
-                v-model="referencesExpanded" 
+                v-model="referencesExpanded"
                 dense
                 expand-separator
                 class="text-grey-7"
@@ -88,6 +88,15 @@
                 <template v-slot:header>
                   <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
                     References ({{ references.length }})
+                  </q-item-section>
+                  <q-item-section side>
+                    <BaseButton
+                      size="sm"
+                      variant="outline"
+                      @click.stop="showReferenceSearch = true"
+                    >
+                      Add Reference
+                    </BaseButton>
                   </q-item-section>
                 </template>
                 
@@ -485,6 +494,13 @@
       :show="showPubMedSearch"
       @close="showPubMedSearch = false"
     />
+
+    <ReferenceSearchDialog
+      :show="showReferenceSearch"
+      :project-id="projectId"
+      @close="showReferenceSearch = false"
+      @added="handleReferenceAdded"
+    />
 </template>
 
 <script setup>
@@ -495,6 +511,7 @@ import PageHeader from '../components/ui/PageHeader.vue'
 import FileActionDialog from '../components/project/FileActionDialog.vue'
 import FileUpload from '../components/ui/FileUpload.vue'
 import PubMedSearch from '../components/ui/PubMedSearch.vue'
+import ReferenceSearchDialog from '../components/project/ReferenceSearchDialog.vue'
 import { useReferenceStore } from '../stores/reference'
 import { useMediaStore } from '../stores/media'
 import { useUserStore } from '../stores/user'
@@ -510,6 +527,7 @@ const showFileAction = ref(false)
 const showPdfUpload = ref(false)
 const showMediaUpload = ref(false)
 const showPubMedSearch = ref(false)
+const showReferenceSearch = ref(false)
 const droppedFiles = ref([])
 
 const projectId = computed(() => route.params.id)
@@ -667,6 +685,12 @@ onMounted(async () => {
     await mediaStore.fetch(projectId.value)
   }
 })
+
+async function handleReferenceAdded() {
+  if (projectId.value) {
+    await referenceStore.fetchAll(projectId.value)
+  }
+}
 </script>
 
 <style scoped>
