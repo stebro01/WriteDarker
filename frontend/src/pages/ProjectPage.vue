@@ -93,22 +93,23 @@
                 
                 <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
                   <q-list dense class="q-pa-none">
-                    <q-item 
-                      v-for="reference in references" 
+                    <q-item
+                      v-for="reference in references"
                       :key="reference.id"
                       dense
                       clickable
                       class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
+                      @click="openReference(reference)"
                     >
                       <q-item-section avatar class="min-width-auto q-pr-xs">
                         <q-icon name="description" size="14px" color="red-5" />
                       </q-item-section>
                       <q-item-section>
                         <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
-                          {{ reference.title }}
+                          {{ reference.filename || reference.title }}
                         </q-item-label>
                         <q-item-label caption class="text-grey-6">
-                          {{ reference.type }} • {{ reference.pages }}p
+                          {{ reference.filetype || 'Unknown' }} • {{ formatFileSize(reference.filesize) }}
                         </q-item-label>
                       </q-item-section>
                     </q-item>
@@ -132,22 +133,23 @@
                 
                 <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
                   <q-list dense class="q-pa-none">
-                    <q-item 
-                      v-for="media in mediaFiles" 
+                    <q-item
+                      v-for="media in mediaFiles"
                       :key="media.id"
                       dense
                       clickable
                       class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
+                      @click="previewMedia(media)"
                     >
                       <q-item-section avatar class="min-width-auto q-pr-xs">
                         <q-icon name="image" size="14px" color="blue-5" />
                       </q-item-section>
                       <q-item-section>
                         <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
-                          {{ media.name }}
+                          {{ media.filename || media.label }}
                         </q-item-label>
                         <q-item-label caption class="text-grey-6">
-                          {{ media.type }} • {{ media.size }}
+                          {{ media.filetype || 'Unknown' }} • {{ formatFileSize(media.filesize) }}
                         </q-item-label>
                       </q-item-section>
                     </q-item>
@@ -495,11 +497,13 @@ import FileUpload from '../components/ui/FileUpload.vue'
 import PubMedSearch from '../components/ui/PubMedSearch.vue'
 import { useReferenceStore } from '../stores/reference'
 import { useMediaStore } from '../stores/media'
+import { useUserStore } from '../stores/user'
 
 // Stores and routing
 const route = useRoute()
 const referenceStore = useReferenceStore()
 const mediaStore = useMediaStore()
+const userStore = useUserStore()
 
 // Dialog states
 const showFileAction = ref(false)
@@ -548,17 +552,8 @@ const chatMessages = ref([
   }
 ])
 
-// Sample data
-const references = ref([
-  { id: 1, title: 'AI and Writing Automation', type: 'PDF', pages: 25 },
-  { id: 2, title: 'Modern Content Creation', type: 'PDF', pages: 18 },
-  { id: 3, title: 'Digital Writing Tools Study', type: 'PDF', pages: 32 }
-])
-
-const mediaFiles = ref([
-  { id: 1, name: 'research_chart.png', type: 'Image', size: '2.3 MB' },
-  { id: 2, name: 'interview_audio.mp3', type: 'Audio', size: '15.7 MB' }
-])
+const references = computed(() => referenceStore.references)
+const mediaFiles = computed(() => mediaStore.media)
 
 // File handling
 function handleDropZoneClick() {
@@ -612,6 +607,24 @@ async function uploadMediaFiles(files) {
   await mediaStore.upload({ projectId: projectId.value, files })
 }
 
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B'
+  if (!bytes) return ''
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+}
+
+function openReference(ref) {
+  if (!ref?.id) return
+  window.open(`http://localhost:8000/references/${ref.id}/file?token=${userStore.token}`, '_blank')
+}
+
+function previewMedia(media) {
+  if (!media?.id) return
+  window.open(`http://localhost:8000/documents/${media.id}/file?token=${userStore.token}`, '_blank')
+}
+
 // Document stats computed property
 const documentStats = computed(() => {
   const text = documentContent.value || ''
@@ -648,8 +661,11 @@ const sendMessage = () => {
   }, 1000)
 }
 
-onMounted(() => {
-  // Any initialization logic here
+onMounted(async () => {
+  if (projectId.value) {
+    await referenceStore.fetchAll(projectId.value)
+    await mediaStore.fetch(projectId.value)
+  }
 })
 </script>
 
