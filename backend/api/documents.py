@@ -1,6 +1,6 @@
 """API endpoints for document management."""
 
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Form
 from fastapi.responses import Response
 from diff_match_patch import diff_match_patch
 from sqlalchemy.orm import Session
@@ -37,17 +37,17 @@ def _add_revision(db: Session, doc: models.Document):
 @router.post("/", response_model=schemas.DocumentRead)
 def create_document(
     token: str,
-    text: Optional[str] = None,
+    text: Optional[str] = Form(None),
     pdf: Optional[UploadFile] = File(None),
     image: Optional[UploadFile] = File(None),
-    label: Optional[str] = None,
-    description: Optional[str] = None,
-    notes: Optional[str] = None,
-    tag: Optional[str] = None,
-    filename: Optional[str] = None,
-    filetype: Optional[str] = None,
-    project_id: Optional[int] = None,
-    position: Optional[int] = None,
+    label: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    notes: Optional[str] = Form(None),
+    tag: Optional[str] = Form(None),
+    filename: Optional[str] = Form(None),
+    filetype: Optional[str] = Form(None),
+    project_id: Optional[int] = Form(None),
+    position: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
     """Create a new document owned by the current user."""

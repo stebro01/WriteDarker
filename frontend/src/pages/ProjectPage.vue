@@ -86,6 +86,7 @@
                 v-model:expanded="mediaFilesExpanded"
                 :media="mediaFiles"
                 @select="editMedia"
+                @delete="deleteMedia"
               />
             </q-list>
           </div>
@@ -708,6 +709,31 @@ function editMedia(media) {
   if (!media) return
   selectedMedia.value = media
   showMediaEdit.value = true
+}
+
+async function deleteMedia(media) {
+  if (!media?.id) return
+  
+  // Show confirmation dialog
+  const confirmed = confirm(`Are you sure you want to delete "${media.filename || media.label}"? This action cannot be undone.`)
+  if (!confirmed) return
+  
+  console.log('Deleting media:', media.filename || media.label)
+  
+  try {
+    const result = await mediaStore.delete(media.id)
+    
+    if (result.success) {
+      console.log('Media deleted successfully')
+      // Media is automatically removed from the store, so the UI will update
+    } else {
+      console.error('Failed to delete media:', result.error)
+      alert(`Failed to delete media: ${result.error}`)
+    }
+  } catch (error) {
+    console.error('Error deleting media:', error)
+    alert('Failed to delete media. Please try again.')
+  }
 }
 
 async function handleMediaUpdated() {

@@ -18,20 +18,36 @@
           v-for="item in media"
           :key="item.id"
           dense
-          clickable
-          class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
-          @click="emit('select', item)"
+          class="q-pa-xs rounded hover:bg-grey-2"
         >
           <q-item-section avatar class="min-width-auto q-pr-xs">
             <q-icon name="image" size="14px" color="blue-5" />
           </q-item-section>
-          <q-item-section>
+          <q-item-section 
+            clickable
+            class="cursor-pointer"
+            @click="emit('select', item)"
+          >
             <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
               {{ item.filename || item.label }}
             </q-item-label>
             <q-item-label caption class="text-grey-6">
               {{ item.filetype || 'Unknown' }} • {{ formatFileSize(item.filesize) }}
             </q-item-label>
+          </q-item-section>
+          <q-item-section side class="min-width-auto">
+            <q-btn
+              flat
+              round
+              dense
+              size="xs"
+              color="red-6"
+              icon="delete"
+              @click.stop="emit('delete', item)"
+              class="q-ml-xs"
+            >
+              <q-tooltip class="text-caption">Delete media file</q-tooltip>
+            </q-btn>
           </q-item-section>
         </q-item>
       </q-list>
@@ -47,7 +63,7 @@ const props = defineProps({
   expanded: { type: Boolean, default: true }
 })
 
-const emit = defineEmits(['update:expanded', 'select'])
+const emit = defineEmits(['update:expanded', 'select', 'delete'])
 
 const expandedModel = computed({
   get: () => props.expanded,

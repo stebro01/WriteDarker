@@ -57,7 +57,7 @@ export const useMediaStore = defineStore('media', {
       
       const apiStore = useApiStore()
       const form = new FormData()
-      form.append('project_id', projectId)
+      form.append('project_id', String(projectId))
       if (label) form.append('label', label)
       if (description) form.append('description', description)
       
@@ -122,15 +122,17 @@ export const useMediaStore = defineStore('media', {
 
     async delete(id) {
       const userStore = useUserStore()
-      if (!userStore.token || !id) return
+      if (!userStore.token || !id) return { success: false, error: 'Missing data' }
       const apiStore = useApiStore()
       this.loading = true
       this.error = null
       try {
         await apiStore.delete(`/documents/${id}?token=${userStore.token}`, userStore.token)
         this.media = this.media.filter(m => m.id !== id)
+        return { success: true }
       } catch (err) {
         this.error = err.response?.data?.detail || err.message || 'Delete failed'
+        return { success: false, error: this.error }
       } finally {
         this.loading = false
       }
