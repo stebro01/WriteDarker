@@ -61,15 +61,20 @@
           <!-- File upload area -->
           <div class="col-auto q-pa-sm">
             <div
-              class="q-pa-sm border-2 border-dashed text-grey-6 rounded cursor-pointer hover:border-orange-6 transition-colors"
+              :class="[
+                'q-pa-sm border-2 border-dashed text-grey-6 rounded transition-colors',
+                isNewProject ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-orange-6'
+              ]"
               style="border-color: #d1d5db;"
-              @click="handleDropZoneClick"
-              @dragover.prevent
-              @drop.prevent="handleDropZoneDrop"
+              @click="isNewProject ? null : handleDropZoneClick"
+              @dragover.prevent="isNewProject ? null : $event"
+              @drop.prevent="isNewProject ? null : handleDropZoneDrop"
             >
               <div class="row items-center justify-center q-gutter-x-sm">
                 <q-icon name="cloud_upload" size="20px" color="grey-6" />
-                <span class="text-caption text-grey-6">Drop files or click</span>
+                <span class="text-caption text-grey-6">
+                  {{ isNewProject ? 'Save project first to upload files' : 'Drop files or click' }}
+                </span>
               </div>
             </div>
           </div>
@@ -112,7 +117,26 @@
         <!-- Document editor -->
         <div class="flex-1 flex flex-col p-4 sm:p-6 min-h-0">
           <div class="max-w-4xl mx-auto flex flex-col flex-1 min-h-0 w-full">
-            <!-- Document title -->
+            <!-- Project Information -->
+        <div v-if="currentProject && !isNewProject" class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold text-blue-900">Project Information</h2>
+            <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">ID: {{ currentProject.id }}</span>
+          </div>
+          <div class="space-y-1">
+            <div class="text-sm text-blue-800">
+              <strong>Name:</strong> {{ currentProject.label }}
+            </div>
+            <div v-if="currentProject.description" class="text-sm text-blue-700">
+              <strong>Description:</strong> {{ currentProject.description }}
+            </div>
+            <div v-if="currentProject.coauthors" class="text-sm text-blue-700">
+              <strong>Co-authors:</strong> {{ currentProject.coauthors }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Document title -->
             <input
               v-model="documentTitle"
               class="w-full text-sm sm:text-base font-medium text-gray-900 bg-transparent border-none outline-none mb-4 sm:mb-6 placeholder-gray-400 focus:placeholder-gray-300 flex-shrink-0"
@@ -432,11 +456,17 @@
       @close="showMediaEdit = false"
       @updated="handleMediaUpdated"
     />
+
+    <NewProjectDialog
+      :show="showNewProject"
+      @close="handleNewProjectClose"
+      @created="handleProjectCreated"
+    />
   </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '../components/ui/BaseButton.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import FileActionDialog from '../components/project/FileActionDialog.vue'
@@ -446,15 +476,19 @@ import ReferenceSearchDialog from '../components/project/ReferenceSearchDialog.v
 import ReferenceList from '../components/project/ReferenceList.vue'
 import MediaList from '../components/project/MediaList.vue'
 import MediaEditDialog from '../components/ui/MediaEditDialog.vue'
+import NewProjectDialog from '../components/project/NewProjectDialog.vue'
 import { useReferenceStore } from '../stores/reference'
 import { useMediaStore } from '../stores/media'
 import { useUserStore } from '../stores/user'
+import { useProjectStore } from '../stores/project'
 
 // Stores and routing
 const route = useRoute()
+const router = useRouter()
 const referenceStore = useReferenceStore()
 const mediaStore = useMediaStore()
 const userStore = useUserStore()
+const projectStore = useProjectStore()
 
 // Dialog states
 const showFileAction = ref(false)
@@ -463,13 +497,22 @@ const showMediaUpload = ref(false)
 const showPubMedSearch = ref(false)
 const showReferenceSearch = ref(false)
 const showMediaEdit = ref(false)
+const showNewProject = ref(false)
 const selectedMedia = ref(null)
 const droppedFiles = ref([])
 
 const projectId = computed(() => {
   const id = route.params.id
+  console.log('ProjectPage route params:', route.params)
+  console.log('Extracted project ID:', id)
+  console.log('Current route path:', route.path)
   return id ? parseInt(id, 10) : null
 })
+
+const isNewProject = computed(() => route.path === '/project/new')
+
+// Current project data
+const currentProject = ref(null)
 
 // Sidebar states
 const leftSidebarCollapsed = ref(false)
@@ -482,7 +525,13 @@ const writingToolsExpanded = ref(true)
 const exportOptionsExpanded = ref(true)
 
 // Project data
-const projectTitle = ref('Research Paper Draft')
+const projectTitle = computed(() => {
+  if (isNewProject.value) {
+    return 'New Project'
+  }
+  return currentProject.value?.label || 'Loading Project...'
+})
+
 const documentTitle = ref('The Impact of AI on Modern Writing')
 const documentContent = ref('Start writing your document here...')
 
@@ -561,9 +610,56 @@ async function handleUploadMedia() {
 }
 
 async function uploadMediaFiles(files) {
-  if (!projectId.value) return
+  if (!projectId.value) {
+    if (isNewProject.value) {
+      console.error('Cannot upload media files to a new project. Please save the project first.')
+      // TODO: Show user-friendly notification that project needs to be saved first
+      alert('Please save your project before uploading media files.')
+      return
+    } else {
+      console.error('No project ID available for media upload')
+      return
+    }
+  }
+  
+  console.log('Starting media upload for', files.length, 'files')
+  
+  let successCount = 0
+  let errorCount = 0
+  
   for (const file of files) {
-    await mediaStore.upload({ projectId: projectId.value, file, label: file.name })
+    console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size)
+    try {
+      const result = await mediaStore.upload({ 
+        projectId: projectId.value, 
+        file, 
+        label: file.name 
+      })
+      
+      if (result.success) {
+        console.log('Upload successful for:', file.name)
+        successCount++
+      } else {
+        console.error('Upload failed for:', file.name, 'Error:', result.error)
+        errorCount++
+      }
+    } catch (error) {
+      console.error('Upload error for:', file.name, error)
+      errorCount++
+    }
+  }
+  
+  // Show summary
+  console.log(`Upload complete: ${successCount} successful, ${errorCount} failed`)
+  
+  // Refresh the media list after upload
+  if (projectId.value && successCount > 0) {
+    try {
+      await mediaStore.fetch(projectId.value)
+      console.log('Media list refreshed')
+    } catch (error) {
+      console.error('Failed to refresh media list:', error)
+    }
   }
 }
 
@@ -622,8 +718,49 @@ const sendMessage = () => {
 
 onMounted(async () => {
   if (projectId.value) {
-    await referenceStore.fetchAll(projectId.value)
-    await mediaStore.fetch(projectId.value)
+    // Load project data and related items
+    await loadProjectData()
+  } else if (isNewProject.value) {
+    // Show new project dialog when on /project/new route
+    showNewProject.value = true
+  }
+})
+
+async function loadProjectData() {
+  if (!projectId.value) return
+  
+  try {
+    // Load project details
+    const projectResult = await projectStore.fetchById(projectId.value)
+    if (projectResult.success) {
+      currentProject.value = projectResult.data
+      console.log('Loaded project:', currentProject.value)
+    } else {
+      console.error('Failed to load project:', projectResult.error)
+    }
+
+    // Load references and media in parallel
+    await Promise.all([
+      referenceStore.fetchAll(projectId.value),
+      mediaStore.fetch(projectId.value)
+    ])
+  } catch (error) {
+    console.error('Error loading project data:', error)
+  }
+}
+
+// Watch for route changes to handle new project dialog and project changes
+watch(() => route.path, (newPath) => {
+  if (newPath === '/project/new') {
+    showNewProject.value = true
+    currentProject.value = null
+  }
+}, { immediate: true })
+
+// Watch for project ID changes to reload data
+watch(() => projectId.value, async (newProjectId, oldProjectId) => {
+  if (newProjectId && newProjectId !== oldProjectId) {
+    await loadProjectData()
   }
 })
 
@@ -631,6 +768,21 @@ async function handleReferenceAdded() {
   if (projectId.value) {
     await referenceStore.fetchAll(projectId.value)
   }
+}
+
+function handleNewProjectClose() {
+  showNewProject.value = false
+  // If user cancels new project creation, redirect to dashboard
+  // since they can't stay on /project/new without a project
+  if (isNewProject.value) {
+    router.push('/dashboard')
+  }
+}
+
+async function handleProjectCreated(project) {
+  console.log('Project created:', project)
+  // Navigate to the new project page
+  await router.push(`/project/${project.id}`)
 }
 </script>
 
