@@ -10,10 +10,26 @@ from .. import schemas, models
 from ..services import references as ref_service
 from .users import get_db, get_current_user
 
+
+def _ref_to_dict(ref: models.Reference) -> dict:
+    data = {
+        "id": ref.id,
+        "title": ref.title,
+        "authors": ref.authors,
+        "journal": ref.journal,
+        "year": ref.year,
+        "filename": ref.filename,
+        "filetype": ref.filetype,
+        "file_hash": ref.file_hash,
+    }
+    if ref.pubmed_id:
+        data["pubmed_id"] = ref.pubmed_id
+    return data
+
 router = APIRouter()
 
 
-@router.post("/", response_model=schemas.ReferenceRead)
+@router.post("/")
 def add_reference(
     token: str,
     query: str = Form(...),
@@ -60,9 +76,9 @@ def add_reference(
                 
                 db.commit()
                 db.refresh(existing_ref)
-                
+
                 # Return success - user now has access to this reference
-                return existing_ref
+                return _ref_to_dict(existing_ref)
     
     db_ref = models.Reference(
         pdf=pdf_bytes,
@@ -88,10 +104,10 @@ def add_reference(
     db.add(db_ref)
     db.commit()
     db.refresh(db_ref)
-    return db_ref
+    return _ref_to_dict(db_ref)
 
 
-@router.get("/user", response_model=List[schemas.ReferenceRead])
+@router.get("/user")
 def list_user_references(
     token: str,
     search: str | None = None,
@@ -100,12 +116,11 @@ def list_user_references(
 ):
     """List all references shared with the current user with optional search and sorting."""
     user = get_current_user(token, db)
-    
-    # Get references shared with user via reference_to_owner table
+
     q = db.query(models.Reference).join(models.Reference.shared_with).filter(
         models.User.id == user.id
     )
-    
+
     if search:
         like = f"%{search}%"
         q = q.filter(
@@ -124,26 +139,26 @@ def list_user_references(
         column = getattr(models.Reference, sort_field, None)
         if column is not None:
             q = q.order_by(column.desc() if desc else column)
-    return q.all()
+    refs = q.all()
+    return [_ref_to_dict(r) for r in refs]
 
 
 
 
 
-@router.get("/{ref_id}", response_model=schemas.ReferenceRead)
+@router.get("/{ref_id}")
 def read_reference(ref_id: int, token: str, db: Session = Depends(get_db)):
     """Return a reference shared with the current user."""
     user = get_current_user(token, db)
-    
-    # Check if reference is shared with the user
+
     ref = db.query(models.Reference).join(models.Reference.shared_with).filter(
         models.Reference.id == ref_id,
         models.User.id == user.id
     ).first()
-    
+
     if not ref:
         raise HTTPException(status_code=404, detail="Reference not found")
-    return ref
+    return _ref_to_dict(ref)
 
 
 @router.put("/{ref_id}", response_model=schemas.ReferenceRead)
@@ -194,7 +209,7 @@ def update_reference(
     return ref
 
 
-@router.get("/project/{project_id}", response_model=List[schemas.ReferenceRead])
+@router.get("/project/{project_id}")
 def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
     """List references for a project."""
     user = get_current_user(token, db)
@@ -204,7 +219,7 @@ def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
         .filter(models.Project.id == project_id, models.Project.author_id == user.id)
         .all()
     )
-    return refs
+    return [_ref_to_dict(r) for r in refs]
 
 
 

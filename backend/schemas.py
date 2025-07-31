@@ -84,6 +84,16 @@ class ProjectRead(ProjectBase):
         from_attributes = True
 
 
+class ProjectSummary(ProjectRead):
+    document_count: int
+    word_count: int
+    reference_count: int
+    media_count: int
+
+    class Config:
+        from_attributes = True
+
+
 class ReferenceCreate(BaseModel):
     project_ids: Optional[list[int]] = None
     query: str

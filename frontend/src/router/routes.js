@@ -31,7 +31,7 @@ const routes = [
   },
   {
     path: '/projects',
-    component: () => import('pages/DashboardPage.vue'), // For now, redirect to dashboard
+    component: () => import('pages/ProjectsListPage.vue'),
     beforeEnter: authGuard,
     meta: { requiresAuth: true }
   },
