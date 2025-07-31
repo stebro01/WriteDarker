@@ -32,6 +32,14 @@ project_reference_link = Table(
     Column("reference_id", Integer, ForeignKey("references.id"), primary_key=True),
 )
 
+# Association table between references and owners for many-to-many relation
+reference_owner_link = Table(
+    "reference_to_owner",
+    Base.metadata,
+    Column("reference_id", Integer, ForeignKey("references.id"), primary_key=True),
+    Column("owner_id", Integer, ForeignKey("users.id"), primary_key=True),
+)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -44,6 +52,11 @@ class User(Base):
     email = Column(String, unique=True, index=True)
 
     documents = relationship("Document", back_populates="owner")
+    shared_references = relationship(
+        "Reference",
+        secondary=reference_owner_link,
+        back_populates="shared_with",
+    )
 
 class Document(Base):
     """Represents an uploaded or generated document."""
@@ -99,13 +112,18 @@ class Reference(Base):
     pdf = Column(LargeBinary)
     filename = Column(String)
     filetype = Column(String)
-    owner_id = Column(Integer, ForeignKey("users.id"))
+    file_hash = Column(String, index=True)  # SHA-256 hash of the file content
 
-    owner = relationship("User")
     projects = relationship(
         "Project",
         secondary=project_reference_link,
         back_populates="references",
+    )
+    # Many-to-many relationship with users who have access to this reference
+    shared_with = relationship(
+        "User",
+        secondary=reference_owner_link,
+        back_populates="shared_references",
     )
 
 

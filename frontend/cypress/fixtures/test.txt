@@ -1,0 +1,8 @@
+This is a test text file for Cypress testing.
+
+It contains multiple lines and demonstrates:
+- Text file preview functionality
+- Line breaks preservation
+- Special characters: @#$%^&*()
+
+Perfect for testing the preview component!

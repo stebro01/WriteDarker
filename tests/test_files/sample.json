@@ -1,0 +1,17 @@
+{
+  "name": "Sample JSON File",
+  "description": "This is a test JSON file for preview functionality",
+  "features": [
+    "JSON syntax highlighting",
+    "Proper formatting",
+    "Nested objects and arrays"
+  ],
+  "metadata": {
+    "version": "1.0",
+    "author": "Test System",
+    "created": "2024-01-01T00:00:00Z"
+  },
+  "numbers": [1, 2, 3, 4, 5],
+  "boolean": true,
+  "null_value": null
+}

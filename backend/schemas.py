@@ -92,11 +92,12 @@ class ReferenceCreate(BaseModel):
 class ReferenceRead(BaseModel):
     id: int
     title: str
-    authors: str
-    journal: str
-    year: str
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    year: Optional[str] = None
     filename: Optional[str] = None
     filetype: Optional[str] = None
+    file_hash: Optional[str] = None
 
     class Config:
         from_attributes = True

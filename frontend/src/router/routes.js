@@ -42,6 +42,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/user-details',
+    component: () => import('pages/UserDetailsPage.vue'),
+    beforeEnter: authGuard,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/legacy',
     component: () => import('layouts/MainLayout.vue'),
     children: [{ path: '', component: () => import('pages/IndexPage.vue') }],

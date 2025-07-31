@@ -111,6 +111,12 @@ export const useApiStore = defineStore('api', {
       return await this.put(`/auth/me?token=${token}`, userData, token)
     },
 
+    async changePassword(currentPassword, newPassword, token) {
+      return await this.put(`/auth/me?token=${token}`, {
+        password: newPassword
+      }, token)
+    },
+
     async logout() {
       return await this.post('/auth/logout')
     },

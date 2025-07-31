@@ -45,10 +45,30 @@ export const useReferenceStore = defineStore('reference', {
       if (file) form.append('pdf', file)
 
       this.loading = true
+      this.error = null
       try {
         const data = await apiStore.post(`/references/?token=${userStore.token}`, form, userStore.token)
-        this.references.push(data)
-        return data
+        
+        // Check if this reference is already in our list (could happen with shared references)
+        const existingIndex = this.references.findIndex(r => r.id === data.id)
+        if (existingIndex >= 0) {
+          // Update existing reference
+          this.references[existingIndex] = data
+        } else {
+          // Add new reference
+          this.references.push(data)
+        }
+        
+        return { success: true, data }
+      } catch (error) {
+        // Handle duplicate file error specifically
+        if (error.response?.status === 409) {
+          this.error = error.response.data.detail || 'File already exists in your library'
+          return { success: false, error: this.error, isDuplicate: true }
+        }
+        // Re-throw other errors
+        this.error = error.response?.data?.detail || error.message || 'Upload failed'
+        return { success: false, error: this.error }
       } finally {
         this.loading = false
       }
