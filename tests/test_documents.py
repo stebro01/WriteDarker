@@ -45,9 +45,21 @@ def test_upload_pdf():
     writer.write(pdf_buf)
     pdf_buf.seek(0)
     files = {"pdf": ("test.pdf", pdf_buf, "application/pdf")}
-    resp = client.post("/documents/", params={"token": token}, files=files)
+    resp = client.post(
+        "/documents/", params={"token": token, "tag": "paper"}, files=files
+    )
     assert resp.status_code == 200
-    assert resp.json()["id"] is not None
+    data = resp.json()
+    assert data["id"] is not None
+    assert data["filename"] == "test.pdf"
+    assert data["filetype"] == "application/pdf"
+    assert data["tag"] == "paper"
+    doc_id = data["id"]
+
+    file_resp = client.get(f"/documents/{doc_id}/file", params={"token": token})
+    assert file_resp.status_code == 200
+    assert file_resp.headers["content-type"] == "application/pdf"
+    assert file_resp.content.startswith(b"%PDF")
 
 
 def test_revision_history_and_restore():

@@ -123,3 +123,35 @@ def test_upload_list_and_delete_reference_files():
 
     client.delete(f"/references/{pdf_id}", params={"token": token})
 
+
+def test_associate_existing_reference_with_project():
+    token = get_token()
+    proj_resp = client.post(
+        "/projects/",
+        params={"token": token},
+        json={"label": "Assoc", "description": "test"},
+    )
+    assert proj_resp.status_code == 200
+    proj_id = proj_resp.json()["id"]
+
+    def fake_fetch(q):
+        return {"title": q, "authors": "", "journal": "", "year": "2024"}
+
+    with patch("backend.api.references.ref_service.fetch_reference", side_effect=fake_fetch):
+        ref_resp = client.post(
+            "/references/",
+            params={"token": token},
+            data={"query": "alpha"},
+        )
+        assert ref_resp.status_code == 200
+        ref_id = ref_resp.json()["id"]
+
+    assoc_resp = client.post(
+        f"/references/{ref_id}/projects/{proj_id}", params={"token": token}
+    )
+    assert assoc_resp.status_code == 200
+
+    proj_refs = client.get(f"/references/project/{proj_id}", params={"token": token})
+    assert proj_refs.status_code == 200
+    assert any(r["id"] == ref_id for r in proj_refs.json())
+
