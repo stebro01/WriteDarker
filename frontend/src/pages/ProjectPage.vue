@@ -419,6 +419,7 @@
     />
 
     <ReferenceSearchDialog
+      v-if="projectId"
       :show="showReferenceSearch"
       :project-id="projectId"
       @close="showReferenceSearch = false"
@@ -465,7 +466,10 @@ const showMediaEdit = ref(false)
 const selectedMedia = ref(null)
 const droppedFiles = ref([])
 
-const projectId = computed(() => route.params.id)
+const projectId = computed(() => {
+  const id = route.params.id
+  return id ? parseInt(id, 10) : null
+})
 
 // Sidebar states
 const leftSidebarCollapsed = ref(false)
@@ -557,6 +561,7 @@ async function handleUploadMedia() {
 }
 
 async function uploadMediaFiles(files) {
+  if (!projectId.value) return
   for (const file of files) {
     await mediaStore.upload({ projectId: projectId.value, file, label: file.name })
   }
