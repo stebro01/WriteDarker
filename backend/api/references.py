@@ -146,6 +146,54 @@ def read_reference(ref_id: int, token: str, db: Session = Depends(get_db)):
     return ref
 
 
+@router.put("/{ref_id}", response_model=schemas.ReferenceRead)
+def update_reference(
+    ref_id: int,
+    update: schemas.ReferenceUpdate,
+    token: str,
+    db: Session = Depends(get_db),
+):
+    """Update a reference's metadata."""
+    user = get_current_user(token, db)
+    
+    # Get the reference - must be one the user has access to
+    ref = db.query(models.Reference).join(
+        models.Reference.shared_with
+    ).filter(
+        models.Reference.id == ref_id,
+        models.User.id == user.id
+    ).first()
+    
+    if not ref:
+        raise HTTPException(status_code=404, detail="Reference not found")
+    
+    # Update only the provided fields
+    if update.title is not None:
+        ref.title = update.title
+    if update.authors is not None:
+        ref.authors = update.authors
+    if update.journal is not None:
+        ref.journal = update.journal
+    if update.year is not None:
+        ref.year = update.year
+    if update.doi is not None:
+        ref.doi = update.doi
+    if update.abstract is not None:
+        ref.abstract = update.abstract
+    if update.keywords is not None:
+        ref.keywords = update.keywords
+    if update.publication_date is not None:
+        ref.publication_date = update.publication_date
+    if update.url is not None:
+        ref.url = update.url
+    if update.citation is not None:
+        ref.citation = update.citation
+    
+    db.commit()
+    db.refresh(ref)
+    return ref
+
+
 @router.get("/project/{project_id}", response_model=List[schemas.ReferenceRead])
 def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
     """List references for a project."""

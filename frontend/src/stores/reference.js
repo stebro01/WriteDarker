@@ -74,6 +74,30 @@ export const useReferenceStore = defineStore('reference', {
       }
     },
 
+    async update(id, referenceData) {
+      const userStore = useUserStore()
+      if (!userStore.token) return
+      const apiStore = useApiStore()
+      this.loading = true
+      this.error = null
+      try {
+        const data = await apiStore.put(`/references/${id}?token=${userStore.token}`, referenceData, userStore.token)
+        
+        // Update the reference in our local store
+        const index = this.references.findIndex(r => r.id === id)
+        if (index >= 0) {
+          this.references[index] = data
+        }
+        
+        return { success: true, data }
+      } catch (error) {
+        this.error = error.response?.data?.detail || error.message || 'Update failed'
+        return { success: false, error: this.error }
+      } finally {
+        this.loading = false
+      }
+    },
+
     async delete(id) {
       const userStore = useUserStore()
       if (!userStore.token) return

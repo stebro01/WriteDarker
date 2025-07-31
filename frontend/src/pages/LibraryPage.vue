@@ -62,7 +62,7 @@
           <td class="p-2 text-sm text-gray-600">
             {{ ref.year || '-' }}
           </td>
-          <td class="p-2">
+          <td class="p-2 text-right">
             <div class="flex flex-col space-y-1">
               <span v-if="ref.pubmed_id" class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,6 +78,7 @@
               </span>
             </div>
           </td>
+          <!-- Actions -->
           <td class="p-2">
             <div class="flex space-x-2">
               <BaseButton 
@@ -86,17 +87,23 @@
                 size="sm" 
                 @click="previewReference(ref)"
               >
-                {{ ref.filename ? 'Preview' : 'View Article' }}
+                <q-icon name="visibility" />
+                <q-tooltip>View Reference</q-tooltip>
               </BaseButton>
-              <BaseButton 
-                v-if="ref.url" 
-                variant="outline" 
-                size="sm" 
-                @click="openPubMedUrl(ref.url)"
-              >
-                PubMed
-              </BaseButton>
-              <BaseButton variant="danger" size="sm" @click="remove(ref)">Delete</BaseButton>
+              
+              <!-- Dropdown Menu -->
+              <div class="relative">
+                <BaseButton 
+                  variant="outline" 
+                  size="sm" 
+                  @click="toggleDropdown(ref.id)"
+                  class="px-2"
+                  :data-ref-id="ref.id"
+                >
+                  <q-icon name="more_vert" />
+                  <q-tooltip>More Actions</q-tooltip>
+                </BaseButton>
+              </div>
             </div>
           </td>
         </tr>
@@ -118,6 +125,7 @@
     <FilePreview :show="showPreview" :reference="selectedReference" @close="closePreview" />
     <PubMedArticlePreview :show="showPubMedPreview" :reference="selectedPubMedReference" @close="closePubMedPreview" />
     <PubMedSearch :show="showPubMedSearch" @close="showPubMedSearch = false" @import-success="handlePubMedImport" />
+    <ReferenceEditForm :show="showEditForm" :reference="referenceToEdit" @close="closeEditForm" @updated="handleReferenceUpdated" />
     
     <!-- Confirmation Dialog -->
     <ConfirmDialog
@@ -134,11 +142,45 @@
       @confirm="confirmDelete"
       @close="showDeleteConfirm = false"
     />
+    
+    <!-- Global Dropdown (Teleported to body) -->
+    <Teleport to="body">
+      <div 
+        v-if="openDropdown && dropdownData"
+        class="fixed w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50"
+        :style="dropdownStyle"
+      >
+        <div class="py-1">
+          <button 
+            v-if="dropdownData.url" 
+            @click="openPubMedUrl(dropdownData.url); closeDropdown()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+          >
+            <q-icon name="book" class="mr-2" />
+            View PubMed Article
+          </button>
+          <button 
+            @click="editReference(dropdownData); closeDropdown()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+          >
+            <q-icon name="edit" class="mr-2" />
+            Edit Reference
+          </button>
+          <button 
+            @click="remove(dropdownData); closeDropdown()"
+            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+          >
+            <q-icon name="delete" class="mr-2" />
+            Delete Reference
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useReferenceStore } from '../stores/reference'
 import BaseButton from '../components/ui/BaseButton.vue'
 import FileUpload from '../components/ui/FileUpload.vue'
@@ -147,14 +189,17 @@ import PubMedArticlePreview from '../components/ui/PubMedArticlePreview.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
 import ConfirmDialog from '../components/ui/ConfirmDialog.vue'
 import PubMedSearch from '../components/ui/PubMedSearch.vue'
+import ReferenceEditForm from '../components/ui/ReferenceEditForm.vue'
 
 const referenceStore = useReferenceStore()
 const showUpload = ref(false)
 const showPreview = ref(false)
 const showPubMedPreview = ref(false)
 const showPubMedSearch = ref(false)
+const showEditForm = ref(false)
 const selectedReference = ref(null)
 const selectedPubMedReference = ref(null)
+const referenceToEdit = ref(null)
 const filter = ref('')
 const sortKey = ref('title')
 const sortAsc = ref(true)
@@ -168,12 +213,26 @@ const deleteConfirmDetails = computed(() => {
   return `This will remove "${referenceToDelete.value.title}" from your library. If other users have access to this reference, it will only be removed from your access.`
 })
 
+// Dropdown state
+const openDropdown = ref(null)
+const dropdownData = ref(null)
+const dropdownStyle = ref({})
+
 async function fetchRefs() {
   // fetch all references for the current user
   await referenceStore.fetchAll()
 }
 
-onMounted(fetchRefs)
+onMounted(() => {
+  fetchRefs()
+  // Add click outside listener
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  // Remove click outside listener
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const filtered = computed(() => {
   let res = referenceStore.references.filter(r => r.title.toLowerCase().includes(filter.value.toLowerCase()))
@@ -291,6 +350,86 @@ function truncateText(text, maxLength) {
     return text
   }
   return text.substring(0, maxLength) + '...'
+}
+
+function editReference(reference) {
+  referenceToEdit.value = reference
+  showEditForm.value = true
+}
+
+function closeEditForm() {
+  showEditForm.value = false
+  referenceToEdit.value = null
+}
+
+function handleReferenceUpdated(updatedReference) {
+  // The store is already updated by the update method
+  // This is just for any additional UI feedback if needed
+  console.log('Reference updated:', updatedReference)
+}
+
+function toggleDropdown(refId) {
+  if (openDropdown.value === refId) {
+    closeDropdown()
+  } else {
+    const reference = referenceStore.references.find(r => r.id === refId)
+    if (reference) {
+      openDropdown.value = refId
+      dropdownData.value = reference
+      // Calculate position after opening
+      nextTick(() => {
+        calculateDropdownPosition(refId)
+      })
+    }
+  }
+}
+
+function closeDropdown() {
+  openDropdown.value = null
+  dropdownData.value = null
+  dropdownStyle.value = {}
+}
+
+function handleClickOutside(event) {
+  // Close dropdown if clicking outside
+  if (openDropdown.value && !event.target.closest('[data-ref-id]') && !event.target.closest('.fixed')) {
+    closeDropdown()
+  }
+}
+
+function calculateDropdownPosition(refId) {
+  const button = document.querySelector(`[data-ref-id="${refId}"]`)
+  if (!button) return
+  
+  const rect = button.getBoundingClientRect()
+  const viewportHeight = window.innerHeight
+  const viewportWidth = window.innerWidth
+  const dropdownHeight = 120 // approximate height of dropdown
+  const dropdownWidth = 192 // 48 * 4 (w-48)
+  
+  // Calculate position
+  let top = rect.bottom + 4 // 4px gap below
+  let left = rect.right - dropdownWidth // align to right edge of button
+  
+  // Check if dropdown goes below viewport
+  if (top + dropdownHeight > viewportHeight) {
+    top = rect.top - dropdownHeight - 4 // position above with 4px gap
+  }
+  
+  // Check if dropdown goes outside left edge
+  if (left < 0) {
+    left = 4 // minimum 4px from left edge
+  }
+  
+  // Check if dropdown goes outside right edge
+  if (left + dropdownWidth > viewportWidth) {
+    left = viewportWidth - dropdownWidth - 4 // minimum 4px from right edge
+  }
+  
+  dropdownStyle.value = {
+    top: `${top}px`,
+    left: `${left}px`
+  }
 }
 
 

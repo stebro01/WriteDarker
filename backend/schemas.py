@@ -139,6 +139,19 @@ class ReferenceRead(BaseModel):
         from_attributes = True
 
 
+class ReferenceUpdate(BaseModel):
+    title: Optional[str] = None
+    authors: Optional[str] = None
+    journal: Optional[str] = None
+    year: Optional[str] = None
+    doi: Optional[str] = None
+    abstract: Optional[str] = None
+    keywords: Optional[str] = None
+    publication_date: Optional[str] = None
+    url: Optional[str] = None
+    citation: Optional[str] = None
+
+
 class SettingCreate(BaseModel):
     key: str
     value: str
