@@ -50,6 +50,13 @@ def _ensure_columns_exist():
             "filename": "TEXT",
             "filetype": "TEXT",
             "file_hash": "TEXT",
+            "pubmed_id": "TEXT",
+            "doi": "TEXT",
+            "abstract": "TEXT",
+            "keywords": "TEXT",
+            "publication_date": "TEXT",
+            "url": "TEXT",
+            "citation": "TEXT",
         }
     }
 

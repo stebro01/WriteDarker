@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between p-4 border-b">
         <div>
           <h3 class="text-lg font-semibold text-gray-900">{{ reference?.title || 'Preview' }}</h3>
-          <p class="text-sm text-gray-600">{{ reference?.filename || 'No filename' }}</p>
+          <p v-if="reference && reference.filename !== reference.title" class="text-sm text-gray-600">{{ reference?.filename || 'No filename' }}</p>
         </div>
         <button @click="closePreview" class="text-gray-400 hover:text-gray-600 transition-colors">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

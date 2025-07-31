@@ -113,6 +113,15 @@ class Reference(Base):
     filename = Column(String)
     filetype = Column(String)
     file_hash = Column(String, index=True)  # SHA-256 hash of the file content
+    
+    # PubMed-specific fields
+    pubmed_id = Column(String, index=True)  # PubMed ID (PMID)
+    doi = Column(String)  # Digital Object Identifier
+    abstract = Column(Text)  # Article abstract
+    keywords = Column(String)  # Comma-separated keywords
+    publication_date = Column(String)  # Publication date
+    url = Column(String)  # URL to the article
+    citation = Column(Text)  # Formatted citation string
 
     projects = relationship(
         "Project",
