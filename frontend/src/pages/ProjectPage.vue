@@ -549,11 +549,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.prose {
-  @apply text-gray-700;
-}
-.prose textarea {
+textarea {
   font-family: inherit;
   line-height: 1.75;
+  color: #374151;
 }
 </style>
