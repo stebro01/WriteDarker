@@ -10,11 +10,7 @@
       <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
         References ({{ references.length }})
       </q-item-section>
-      <q-item-section side>
-        <BaseButton size="sm" variant="outline" @click.stop="emit('add')">
-          Add Reference
-        </BaseButton>
-      </q-item-section>
+      <!-- Removed Add Reference button -->
     </template>
 
     <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
@@ -62,14 +58,13 @@
 
 <script setup>
 import { computed } from 'vue'
-import BaseButton from '../ui/BaseButton.vue'
 
 const props = defineProps({
   references: { type: Array, default: () => [] },
   expanded: { type: Boolean, default: true }
 })
 
-const emit = defineEmits(['update:expanded', 'select', 'add', 'preview', 'open-in-window'])
+const emit = defineEmits(['update:expanded', 'select', 'preview', 'open-in-window'])
 
 const expandedModel = computed({
   get: () => props.expanded,
