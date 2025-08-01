@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteDarker - Media Preview</title>
+  
+  <!-- Import Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom styles -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      overflow: hidden;
+    }
+    
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-size: 1.1rem;
+      color: #6b7280;
+    }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e5e7eb;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Media container */
+    .media-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .media-content {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+    }
+
+    /* Controls overlay */
+    .controls-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+      padding: 16px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .media-container:hover .controls-overlay {
+      opacity: 1;
+    }
+
+    /* Info overlay */
+    .info-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(0deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+      padding: 16px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .media-container:hover .info-overlay {
+      opacity: 1;
+    }
+
+    /* Close button */
+    .close-button {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      z-index: 1000;
+    }
+
+    .close-button:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Error state */
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #dc2626;
+      text-align: center;
+    }
+
+    /* Audio player styling */
+    audio {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* Unsupported file styling */
+    .unsupported-file {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    .file-icon {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Loading State -->
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      Loading media...
+    </div>
+    
+    <!-- Error State -->
+    <div v-else-if="error" class="error-state">
+      <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <h2 class="text-xl font-semibold mb-2">Unable to load media</h2>
+      <p class="text-gray-500">{{ errorMessage }}</p>
+    </div>
+    
+    <!-- Media Preview -->
+    <div v-else class="media-container">
+      <!-- Close Button -->
+      <button @click="closeWindow" class="close-button">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      
+      <!-- Controls Overlay -->
+      <div class="controls-overlay">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <h1 class="text-gray-900 text-lg font-medium">
+              {{ media?.filename || media?.label || 'Media Preview' }}
+            </h1>
+
+          </div>
+      
+        </div>
+      </div>
+
+      <!-- Image Preview -->
+      <img
+        v-if="isImage"
+        :src="mediaUrl"
+        :alt="media?.filename || media?.label"
+        class="media-content"
+        @error="handleMediaError"
+        @load="handleMediaLoad"
+      />
+      
+      <!-- Video Preview -->
+      <video
+        v-else-if="isVideo"
+        :src="mediaUrl"
+        controls
+        class="media-content"
+        @error="handleMediaError"
+        @loadeddata="handleMediaLoad"
+      >
+        Your browser does not support the video tag.
+      </video>
+      
+      <!-- Audio Preview -->
+      <div v-else-if="isAudio" class="flex flex-col items-center justify-center h-full">
+        <div class="text-center mb-8">
+          <svg class="w-20 h-20 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+          </svg>
+          <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ media?.filename || media?.label }}</h2>
+          <p class="text-gray-600">{{ formatFileSize(media?.filesize) }}</p>
+        </div>
+        <audio
+          :src="mediaUrl"
+          controls
+          @error="handleMediaError"
+          @loadeddata="handleMediaLoad"
+        >
+          Your browser does not support the audio tag.
+        </audio>
+      </div>
+      
+      <!-- Unsupported File Type -->
+      <div v-else class="unsupported-file">
+        <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+        </svg>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ media?.filename || media?.label }}</h2>
+        <p class="text-gray-600 mb-4">Preview not available for this file type</p>
+        <p class="text-sm text-gray-500">{{ media?.filetype || 'Unknown' }} • {{ formatFileSize(media?.filesize) }}</p>
+        <button
+          @click="downloadMedia"
+          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center space-x-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          <span>Download File</span>
+        </button>
+      </div>
+
+      <!-- Info Overlay -->
+      <div class="info-overlay">
+        <div class="flex items-center justify-between">
+          <div class="text-gray-700 text-sm">
+            <span v-if="media?.filetype">{{ media.filetype }}</span>
+            <span v-if="media?.filesize"> • {{ formatFileSize(media.filesize) }}</span>
+          </div>
+          <div class="text-gray-600 text-xs opacity-75">
+            Press ESC to close
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const loading = ref(true);
+        const error = ref(false);
+        const errorMessage = ref('');
+        const media = ref(null);
+
+        // Get media ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const mediaId = urlParams.get('id');
+
+        // Computed properties  
+        const mediaUrl = computed(() => {
+          if (!media.value?.id) {
+            return '';
+          }
+          // Get base URL and token from parent window if available
+          const token = getTokenFromParent();
+          const baseUrl = getBaseUrlFromParent();
+          const url = `${baseUrl}/documents/${media.value.id}/file?token=${token}`;
+          return url;
+        });
+
+        const isImage = computed(() => {
+          const type = media.value?.filetype?.toLowerCase() || '';
+          const filename = media.value?.filename?.toLowerCase() || '';
+          const typeMatch = type.startsWith('image/');
+          const extensionMatch = filename.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/);
+          return typeMatch || extensionMatch;
+        });
+
+        const isVideo = computed(() => {
+          const type = media.value?.filetype?.toLowerCase() || '';
+          const filename = media.value?.filename?.toLowerCase() || '';
+          return type.startsWith('video/') || 
+                 filename.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/);
+        });
+
+        const isAudio = computed(() => {
+          const type = media.value?.filetype?.toLowerCase() || '';
+          const filename = media.value?.filename?.toLowerCase() || '';
+          return type.startsWith('audio/') || 
+                 filename.match(/\.(mp3|wav|ogg|aac|flac|m4a)$/);
+        });
+
+        // Methods
+        function formatFileSize(bytes) {
+          if (bytes === 0) return '0 B';
+          if (!bytes) return '';
+          const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(1024));
+          return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+        }
+
+        function downloadMedia() {
+          if (!media.value?.id) return;
+          const token = getTokenFromParent();
+          const baseUrl = getBaseUrlFromParent();
+          window.open(`${baseUrl}/documents/${media.value.id}/file?token=${token}&download=1`, '_blank');
+        }
+
+        function closeWindow() {
+          window.close();
+        }
+
+        function handleMediaError(event) {
+          error.value = true;
+          errorMessage.value = 'Failed to load media file';
+          loading.value = false;
+        }
+
+        function handleMediaLoad(event) {
+          loading.value = false;
+          error.value = false;
+        }
+
+        // Helper functions to get data from parent window
+        function getTokenFromParent() {
+          try {
+            if (window.opener && window.opener.localStorage) {
+              const token = window.opener.localStorage.getItem('auth_token');
+              return token || '';
+            }
+          } catch (e) {
+            // Silently handle errors
+          }
+          return '';
+        }
+
+        function getBaseUrlFromParent() {
+          try {
+            if (window.opener && window.opener.localStorage) {
+              // Try to get the API base URL from the parent's API store
+              const storedApiUrl = window.opener.localStorage.getItem('api_base_url');
+              if (storedApiUrl) {
+                return storedApiUrl;
+              }
+              
+              // Fallback: try to access the parent's API store directly
+              if (window.opener.$apiStore) {
+                const apiBaseUrl = window.opener.$apiStore.baseUrl;
+                return apiBaseUrl;
+              }
+              
+              // Fallback: assume backend is on port 3000 (default config)
+              const frontendOrigin = window.opener.location.origin;
+              const backendUrl = frontendOrigin.replace(':8080', ':3000');
+              return backendUrl;
+            }
+          } catch (e) {
+            // Silently handle errors
+          }
+          
+          // Final fallback - assume localhost:3000
+          return 'http://localhost:3000';
+        }
+
+        // Flag to prevent duplicate message processing
+        let mediaDataReceived = false;
+
+        // Message handling for communication with parent window
+        function setupMessageListener() {
+          window.addEventListener('message', (event) => {
+            if (event.origin !== window.location.origin) {
+              return;
+            }
+
+            const { type, data } = event.data;
+            
+            if (type === 'INIT_MEDIA' && !mediaDataReceived) {
+              mediaDataReceived = true;
+              media.value = data.media;
+              loading.value = false;
+            } else if (type === 'MEDIA_ERROR') {
+              error.value = true;
+              errorMessage.value = data.error || 'Failed to load media';
+              loading.value = false;
+            }
+          });
+        }
+
+        // Request media data from parent
+        function requestMediaData() {
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'REQUEST_MEDIA_DATA',
+              data: { mediaId: parseInt(mediaId) },
+              source: 'media_window'
+            }, window.location.origin);
+          }
+        }
+
+        // Keyboard shortcuts
+        function setupKeyboardShortcuts() {
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              window.close();
+            }
+          });
+        }
+
+        // Lifecycle
+        onMounted(() => {
+          if (!mediaId) {
+            error.value = true;
+            errorMessage.value = 'No media ID provided';
+            loading.value = false;
+            return;
+          }
+
+          setupMessageListener();
+          setupKeyboardShortcuts();
+          
+          // Notify parent that window is ready
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'WINDOW_READY',
+              data: { mediaId: parseInt(mediaId) },
+              source: 'media_window'
+            }, window.location.origin);
+          }
+
+          // Request media data
+          requestMediaData();
+
+          // Fallback timeout
+          setTimeout(() => {
+            if (loading.value && !media.value) {
+              error.value = true;
+              errorMessage.value = 'Timeout loading media data';
+              loading.value = false;
+            }
+          }, 5000);
+        });
+
+        return {
+          loading,
+          error,
+          errorMessage,
+          media,
+          mediaUrl,
+          isImage,
+          isVideo,
+          isAudio,
+          formatFileSize,
+          downloadMedia,
+          closeWindow,
+          handleMediaError,
+          handleMediaLoad
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

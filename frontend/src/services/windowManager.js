@@ -87,6 +87,113 @@ class WindowManager {
   }
 
   /**
+   * Open a media file in a new window
+   * @param {Object} media - Media object
+   * @param {Object} options - Window options
+   * @returns {Window|null} - Reference to opened window
+   */
+  openMediaWindow(media, options = {}) {
+    const {
+      width = 1000,
+      height = 700,
+      left = (screen.width - 1000) / 2,
+      top = (screen.height - 700) / 2
+    } = options
+
+    // Close existing window for this media if it exists
+    this.closeMediaWindow(media.id)
+
+    // Build window features string
+    const features = [
+      `width=${width}`,
+      `height=${height}`,
+      `left=${left}`,
+      `top=${top}`,
+      'scrollbars=yes',
+      'resizable=yes',
+      'status=no',
+      'toolbar=no',
+      'menubar=no',
+      'location=no'
+    ].join(',')
+
+    // Create window URL with media data
+    const windowUrl = this.createMediaWindowUrl(media)
+    
+    // Open the window
+    const newWindow = window.open(windowUrl, `media_${media.id}`, features)
+    
+    if (newWindow) {
+      // Store window reference using media ID with 'media_' prefix to avoid conflicts
+      this.openWindows.set(`media_${media.id}`, newWindow)
+      
+      // Set up close listener
+      const checkClosed = setInterval(() => {
+        if (newWindow.closed) {
+          clearInterval(checkClosed)
+          this.openWindows.delete(`media_${media.id}`)
+          this.notifyWindowClosed(`media_${media.id}`)
+        }
+      }, 1000)
+      
+      // Send initial data to window when it loads
+      const sendInitialData = () => {
+        try {
+          // Convert reactive media to plain object for postMessage
+          const plainMedia = JSON.parse(JSON.stringify(media))
+          this.sendToWindow(newWindow, 'INIT_MEDIA', { media: plainMedia })
+          console.log('Sent initial media data to window:', plainMedia.filename || plainMedia.label)
+        } catch (error) {
+          console.error('Error sending initial media data:', error)
+        }
+      }
+      
+      // Flag to prevent multiple sends
+      let dataSent = false
+      
+      // Try multiple ways to ensure data is sent, but only once
+      const sendOnce = () => {
+        if (!dataSent && !newWindow.closed) {
+          sendInitialData()
+          dataSent = true
+        }
+      }
+      
+      newWindow.addEventListener('load', sendOnce)
+      
+      // Also try after a short delay in case load event doesn't fire
+      setTimeout(sendOnce, 1000)
+      
+      console.log('Media opened in new window:', media.filename || media.label)
+    }
+
+    return newWindow
+  }
+
+  /**
+   * Create URL for media window
+   * @param {Object} media - Media object
+   * @returns {string} - Window URL
+   */
+  createMediaWindowUrl(media) {
+    // Create a standalone HTML page for media preview
+    const baseUrl = window.location.origin
+    return `${baseUrl}/media-window.html?id=${media.id}`
+  }
+
+  /**
+   * Close a media window
+   * @param {number} mediaId - Media ID
+   */
+  closeMediaWindow(mediaId) {
+    const window = this.openWindows.get(`media_${mediaId}`)
+    if (window && !window.closed) {
+      window.close()
+    }
+    this.openWindows.delete(`media_${mediaId}`)
+  }
+
+  /**
    * Create URL for document window
    * @param {Object} document - Document object
    * @returns {string} - Window URL
@@ -163,6 +270,11 @@ class WindowManager {
       if (source === 'document_window') {
         this.handleDocumentWindowMessage(type, data, event.source)
       }
+      
+      // Handle messages from media windows
+      if (source === 'media_window') {
+        this.handleMediaWindowMessage(type, data, event.source)
+      }
     })
   }
 
@@ -186,6 +298,77 @@ class WindowManager {
       default:
         console.log('Unknown message from document window:', type, data)
     }
+  }
+
+  /**
+   * Handle messages from media windows
+   * @param {string} type - Message type
+   * @param {Object} data - Message data
+   * @param {Window} sourceWindow - Source window
+   */
+  handleMediaWindowMessage(type, data, sourceWindow) {
+    switch (type) {
+      case 'REQUEST_MEDIA_DATA':
+        this.handleMediaDataRequest(data.mediaId, sourceWindow)
+        break
+      case 'WINDOW_READY':
+        this.handleMediaWindowReady(data.mediaId, sourceWindow)
+        break
+      default:
+        console.log('Unknown message from media window:', type, data)
+    }
+  }
+
+  /**
+   * Handle media data request from window (fallback method)
+   * @param {number} mediaId - Media ID
+   * @param {Window} sourceWindow - Source window
+   */
+  async handleMediaDataRequest(mediaId, sourceWindow) {
+    try {
+      console.log('Handling media data request for ID:', mediaId)
+      
+      // Try to import and use the media store as fallback
+      const { useMediaStore } = await import('../stores/media')
+      const mediaStore = useMediaStore()
+      
+      // Get all media and find the one we need
+      const allMedia = mediaStore.media
+      console.log('Found media in store:', allMedia.length)
+      const media = allMedia.find(item => item.id === mediaId)
+      
+      if (media) {
+        // Convert reactive proxy to plain object for postMessage
+        const plainMedia = JSON.parse(JSON.stringify(media))
+        this.sendToWindow(sourceWindow, 'INIT_MEDIA', { media: plainMedia })
+        console.log('Sent fallback media data to window:', plainMedia.filename || plainMedia.label)
+      } else {
+        console.error('Media not found in store:', mediaId, 'Available media IDs:', allMedia.map(m => m.id))
+        // Send error message to window
+        this.sendToWindow(sourceWindow, 'MEDIA_ERROR', { 
+          error: 'Media not found',
+          mediaId: mediaId 
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching media data:', error)
+      // Send error message to window
+      this.sendToWindow(sourceWindow, 'MEDIA_ERROR', { 
+        error: error.message,
+        mediaId: mediaId 
+      })
+    }
+  }
+
+  /**
+   * Handle media window ready notification
+   * @param {number} mediaId - Media ID
+   * @param {Window} _sourceWindow - Source window (unused, available for future features)
+   */
+  handleMediaWindowReady(mediaId) {
+    console.log(`Media window ready for media ${mediaId}`)
+    // Store reference to source window for potential future communication
+    // Currently not used but available for future features
   }
 
   /**

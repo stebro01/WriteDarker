@@ -52,7 +52,6 @@
             :media="props.mediaFiles"
             @select="editMedia"
             @delete="deleteMedia"
-            @preview="previewMedia"
             @open-in-window="openMediaInWindow"
           />
         </q-list>
@@ -74,11 +73,6 @@
     </div>
 
     <!-- Dialogs -->
-    <MediaPreviewDialog
-      :show="showMediaPreview"
-      :media="selectedPreviewMedia"
-      @close="showMediaPreview = false"
-    />
 
     <MediaEditDialog
       :show="showMediaEdit"
@@ -128,7 +122,7 @@
 import { ref } from 'vue'
 import ReferenceList from '../ReferenceList.vue'
 import MediaList from '../MediaList.vue'
-import MediaPreviewDialog from '../../ui/MediaPreviewDialog.vue'
+
 import MediaEditDialog from '../../ui/MediaEditDialog.vue'
 import ReferencePreviewDialog from '../../ui/ReferencePreviewDialog.vue'
 import FileActionDialog from '../FileActionDialog.vue'
@@ -138,6 +132,7 @@ import { useApiStore } from '../../../stores/api'
 import { useUserStore } from '../../../stores/user'
 import { useMediaStore } from '../../../stores/media'
 import { useReferenceStore } from '../../../stores/reference'
+import { windowManager } from '../../../services/windowManager'
 
 // Props
 const props = defineProps({
@@ -187,10 +182,8 @@ const showMediaUpload = ref(false)
 const showPubMedSearch = ref(false)
 const showMediaEdit = ref(false)
 const showReferencePreview = ref(false)
-const showMediaPreview = ref(false)
 const selectedMedia = ref(null)
 const selectedReference = ref(null)
-const selectedPreviewMedia = ref(null)
 const droppedFiles = ref([])
 
 // Methods
@@ -214,16 +207,22 @@ function openReferenceInWindow(reference) {
   window.open(`${apiStore.baseUrl}/references/${reference.id}/file?token=${userStore.token}`, '_blank')
 }
 
-function previewMedia(media) {
+function openMediaInWindow(media) {
   if (!media) return
-  selectedPreviewMedia.value = media
-  showMediaPreview.value = true
+  try {
+    // Convert reactive media to plain object
+    const plainMedia = JSON.parse(JSON.stringify(media))
+    const window = windowManager.openMediaWindow(plainMedia)
+    if (window) {
+      console.log('Media opened in new window:', media.filename || media.label)
+    } else {
+      console.error('Failed to open media window')
+    }
+  } catch (error) {
+    console.error('Error opening media in window:', error)
+  }
 }
 
-function openMediaInWindow(media) {
-  if (!media?.id) return
-  window.open(`${apiStore.baseUrl}/documents/${media.id}/file?token=${userStore.token}`, '_blank')
-}
 
 function editMedia(media) {
   if (!media) return

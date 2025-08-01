@@ -3,6 +3,11 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:${import.meta.env.VITE_PORT_BACKEND || 3000}`
 
+// Store the API base URL in localStorage for child windows to access
+if (typeof window !== 'undefined') {
+  localStorage.setItem('api_base_url', API_BASE_URL)
+}
+
 export const useApiStore = defineStore('api', {
   state: () => ({
     loading: false,

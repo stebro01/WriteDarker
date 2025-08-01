@@ -29,7 +29,7 @@
             clickable
             class="cursor-pointer"
             style="flex: 1 1 0; min-width: 0;"
-            @click="emit('preview', item)"
+            @click="emit('open-in-window', item)"
           >
             <q-item-label 
               class="text-caption text-weight-medium text-grey-9" 
@@ -47,18 +47,7 @@
             </q-item-label>
           </q-item-section>
           <q-item-section side class="min-width-auto flex items-center" style="flex: 0 0 auto;">
-            <q-btn
-              flat
-              round
-              dense
-              size="xs"
-              color="blue-6"
-              icon="open_in_new"
-              @click.stop="emit('open-in-window', item)"
-              class="q-mr-xs"
-            >
-              <q-tooltip class="text-caption">Open in new window</q-tooltip>
-            </q-btn>
+
             <q-btn
               flat
               round
@@ -86,7 +75,7 @@ const props = defineProps({
   expanded: { type: Boolean, default: true }
 })
 
-const emit = defineEmits(['update:expanded', 'select', 'delete', 'preview', 'open-in-window'])
+const emit = defineEmits(['update:expanded', 'select', 'delete', 'open-in-window'])
 
 const expandedModel = computed({
   get: () => props.expanded,
