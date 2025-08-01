@@ -4,6 +4,19 @@
     <div class="col-auto border-b border-gray-200 p-4 flex items-center justify-between">
       <h2 class="text-lg font-medium text-gray-900">Documents</h2>
       <div class="flex items-center space-x-2">
+        <!-- Arrange Button -->
+        <BaseButton 
+          variant="ghost" 
+          size="sm" 
+          @click="showArrangeDialog = true"
+          :disabled="documents.length < 2"
+        >
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+          </svg>
+          Arrange
+        </BaseButton>
+        
         <!-- Quick Create Dropdown -->
         <div class="relative" ref="quickCreateRef">
           <BaseButton 
@@ -160,6 +173,16 @@
         </BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Document Arrange Dialog -->
+    <DocumentArrangeDialog
+      :show="showArrangeDialog"
+      :documents="documents"
+      :active-document-id="activeDocumentId"
+      :documents-in-windows="documentsInWindows"
+      @close="showArrangeDialog = false"
+      @save-order="handleSaveDocumentOrder"
+    />
   </div>
 </template>
 
@@ -170,6 +193,7 @@ import { windowManager } from '../../../services/windowManager'
 import BaseButton from '../../ui/BaseButton.vue'
 import BaseModal from '../../ui/BaseModal.vue'
 import DocumentItem from './DocumentItem.vue'
+import DocumentArrangeDialog from './DocumentArrangeDialog.vue'
 
 // Props
 const props = defineProps({
@@ -186,6 +210,7 @@ const documentStore = useDocumentStore()
 const quickCreateRef = ref(null)
 const showQuickCreate = ref(false)
 const showNewDocumentDialog = ref(false)
+const showArrangeDialog = ref(false)
 const editingDocumentId = ref(null)
 const documentsInWindows = ref(new Set()) // Track documents opened in new windows
 
@@ -324,6 +349,24 @@ async function openDocumentInWindow(documentId) {
     }
   } catch (error) {
     console.error('Error opening document in window:', error)
+  }
+}
+
+async function handleSaveDocumentOrder(newOrder) {
+  try {
+    // Update document order in the store using existing reorderDocuments method
+    const result = await documentStore.reorderDocuments(props.projectId, newOrder)
+    if (result.success) {
+      console.log('Document order updated successfully')
+      // Reload documents to reflect new order
+      await loadDocuments()
+    } else {
+      console.error('Failed to update document order:', result.error)
+      // TODO: Show user-friendly error notification
+    }
+  } catch (error) {
+    console.error('Error updating document order:', error)
+    // TODO: Show user-friendly error notification
   }
 }
 
