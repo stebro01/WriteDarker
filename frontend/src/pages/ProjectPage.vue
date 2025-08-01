@@ -53,34 +53,32 @@
 
       <!-- Center - Main Document Area -->
       <div class="col column bg-white" style="height: calc(100vh - 60px);">
-        <q-splitter
-        v-model="splitterModel"
-      horizontal
-      style="height: calc(100vh - 60px);"
-    >
-    
-        <!-- Document editor with scroll area -->
-        <template v-slot:before>
-        <div class="col column">
-          <DocumentEditor
-            :project-id="projectId"
-          />
+        <!-- Flexible Layout Container -->
+        <div class="column" style="height: calc(100vh - 60px);">
+          <!-- Document Editor - Always visible -->
+          <div :class="documentContainerClasses">
+            <DocumentEditor :project-id="projectId" />
+          </div>
+          
+          <!-- Splitter Handle - Only when AI is expanded -->
+          <div 
+            v-if="!chatCollapsed"
+            class="splitter-handle"
+            @mousedown="startResize"
+          >
+            <div class="splitter-line"></div>
+          </div>
+          
+          <!-- AI Assistant - Always present but variable height -->
+          <div :class="aiContainerClasses" :style="aiContainerStyle">
+            <AiAssistant
+              :collapsed="chatCollapsed"
+              :messages="chatMessages"
+              @toggle-collapse="chatCollapsed = !chatCollapsed"
+              @send-message="sendMessage"
+            />
+          </div>
         </div>
-        </template>
-
-        <!-- AI Chat section - fixed height -->
-        <template v-slot:after>
-        <div class="col-auto">
-          <AiAssistant
-            :collapsed="chatCollapsed"
-            :messages="chatMessages"
-            @toggle-collapse="chatCollapsed = !chatCollapsed"
-            @send-message="sendMessage"
-          />
-        </div>
-        </template>
-
-      </q-splitter>
       </div>
 
       <!-- Right Sidebar - Tools & Options -->
@@ -192,7 +190,10 @@ const showNewProject = ref(false)
 const showProjectEdit = ref(false)
 const selectedMedia = ref(null)
 const droppedFiles = ref([])
-const splitterModel = ref(80)
+
+// Custom splitter state
+const aiPanelHeight = ref(300) // Default height in pixels when expanded
+const isResizing = ref(false)
 
 const projectId = computed(() => {
   const id = route.params.id
@@ -246,6 +247,26 @@ const chatMessages = ref([
 
 const references = computed(() => referenceStore.references)
 const mediaFiles = computed(() => mediaStore.media)
+
+// Layout computed properties
+const documentContainerClasses = computed(() => {
+  return chatCollapsed.value ? 'col' : 'column-content'
+})
+
+const aiContainerClasses = computed(() => {
+  return chatCollapsed.value ? 'col-auto' : 'ai-panel-expanded'
+})
+
+const aiContainerStyle = computed(() => {
+  if (chatCollapsed.value) {
+    return {}
+  }
+  return {
+    height: `${aiPanelHeight.value}px`,
+    minHeight: '200px',
+    maxHeight: '600px'
+  }
+})
 
 // File handling - shared between components
 
@@ -352,6 +373,30 @@ async function handleMediaUpdated() {
   if (projectId.value) {
     await mediaStore.fetch(projectId.value)
   }
+}
+
+// Custom splitter methods
+function startResize(event) {
+  isResizing.value = true
+  const startY = event.clientY
+  const startHeight = aiPanelHeight.value
+
+  function handleMouseMove(e) {
+    if (!isResizing.value) return
+    
+    const deltaY = startY - e.clientY // Inverted because we want drag up to increase height
+    const newHeight = Math.max(200, Math.min(600, startHeight + deltaY))
+    aiPanelHeight.value = newHeight
+  }
+
+  function handleMouseUp() {
+    isResizing.value = false
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+  }
+
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', handleMouseUp)
 }
 
 // Methods
@@ -467,5 +512,48 @@ textarea {
   font-family: inherit;
   line-height: 1.75;
   color: #374151;
+}
+
+/* Custom layout classes */
+.column-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ai-panel-expanded {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Custom splitter handle */
+.splitter-handle {
+  height: 4px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.splitter-handle:hover {
+  background: #e8e8e8;
+}
+
+.splitter-line {
+  width: 40px;
+  height: 2px;
+  background: #c0c0c0;
+  border-radius: 1px;
+}
+
+.splitter-handle:hover .splitter-line {
+  background: #999;
 }
 </style>
