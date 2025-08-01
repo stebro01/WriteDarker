@@ -44,15 +44,7 @@
           ></span>
         </h3>
         
-        <!-- Pin Indicator -->
-        <svg 
-          v-if="isPinned" 
-          class="w-4 h-4 text-yellow-500" 
-          fill="currentColor" 
-          viewBox="0 0 20 20"
-        >
-          <path d="M11 17a1 1 0 102 0v-5h4a1 1 0 100-2h-4V4a1 1 0 10-2 0v6H7a1 1 0 100 2h4v5z"/>
-        </svg>
+
       </div>
       
       <!-- Document Actions -->
