@@ -225,6 +225,7 @@ async function createQuickDocument(type) {
     documentStore.setActiveDocument(result.data.id)
   } else {
     console.error('Failed to create document:', result.error)
+    console.error('Full error details:', result.fullError)
     // TODO: Show user-friendly error notification
   }
 }

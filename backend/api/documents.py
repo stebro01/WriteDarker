@@ -54,6 +54,18 @@ def create_document(
 
     user = get_current_user(token, db)
 
+    # Validate project ownership if project_id is provided
+    if project_id is not None:
+        project = db.query(models.Project).filter(
+            models.Project.id == project_id, 
+            models.Project.author_id == user.id
+        ).first()
+        if not project:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Project {project_id} not found or access denied"
+            )
+
     pdf_bytes = None
     extracted_text = text
     if pdf is not None:

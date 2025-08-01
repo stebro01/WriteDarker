@@ -69,7 +69,6 @@ export const useDocumentStore = defineStore('document', {
       
       try {
         const formData = new FormData()
-        formData.append('token', userStore.token)
         formData.append('label', label)
         formData.append('text', text)
         formData.append('tag', type)
@@ -79,15 +78,38 @@ export const useDocumentStore = defineStore('document', {
           formData.append('position', position.toString())
         }
         
-        const data = await apiStore.post('/documents/', formData, userStore.token)
+        // Debug logging
+        console.log('Creating document with data:', {
+          label, text, type, projectId, position,
+          hasToken: !!userStore.token
+        })
+        console.log('FormData entries:')
+        for (let [key, value] of formData.entries()) {
+          console.log(`  ${key}: ${value}`)
+        }
+        
+        // Send token as query parameter
+        const query = new URLSearchParams({ token: userStore.token }).toString()
+        const data = await apiStore.post(`/documents/?${query}`, formData, userStore.token)
         
         // Add to our local state
         this.documents.push(data)
         
         return { success: true, data }
       } catch (error) {
+        console.error('Document creation error:', error)
+        console.error('Error response:', error.response?.data)
+        
+        // Log validation details if they exist
+        if (error.response?.data?.detail && Array.isArray(error.response.data.detail)) {
+          console.error('Validation errors:')
+          error.response.data.detail.forEach((validationError, index) => {
+            console.error(`  ${index + 1}:`, validationError)
+          })
+        }
+        
         const errorMessage = error.response?.data?.detail || error.message || 'Failed to create document'
-        return { success: false, error: errorMessage }
+        return { success: false, error: errorMessage, fullError: error.response?.data }
       } finally {
         this.loading = false
       }
