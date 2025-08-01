@@ -10,7 +10,7 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-lg font-medium text-gray-900">PubMed Article</h3>
+            <h3 class="text-lg font-medium text-gray-900" v-if="mode">{{ mode === 'library' ? 'PubMed Article' : 'Article Preview' }}</h3>
             <p class="text-sm text-gray-600">PMID: {{ reference?.pubmed_id || 'N/A' }}</p>
           </div>
         </div>
@@ -165,6 +165,10 @@ const props = defineProps({
   reference: {
     type: Object,
     default: null
+  },
+  mode: {
+    type: String,
+    default: 'preview'
   }
 })
 

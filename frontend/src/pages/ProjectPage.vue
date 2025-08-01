@@ -58,96 +58,36 @@
 
         <!-- Sidebar content -->
         <div v-if="!leftSidebarCollapsed" class="column flex-1 overflow-y-auto min-h-0 sidebar-scrollable">
-          <!-- File upload area -->
+          <!-- Add Files Button -->
           <div class="col-auto q-pa-sm">
-            <div class="q-pa-sm border-2 border-dashed text-grey-6 rounded cursor-pointer hover:border-orange-6 transition-colors" style="border-color: #d1d5db;">
-              <div class="row items-center justify-center q-gutter-x-sm">
-                <q-icon name="cloud_upload" size="20px" color="grey-6" />
-                <span class="text-caption text-grey-6">Drop files or click</span>
-              </div>
-            </div>
+            <q-btn
+              :disable="!projectId || isNewProject"
+              @click="handleAddFilesClick"
+              outline
+              color="orange-6"
+              size="sm"
+              class="full-width q-py-sm"
+              icon="add"
+            >
+              <span class="q-ml-xs">{{ (!projectId || isNewProject) ? 'Save project first' : 'Add Files' }}</span>
+            </q-btn>
           </div>
 
           <!-- References and Media Files List -->
           <div class="col">
             <q-list dense class="q-pa-none">
-              <!-- References section -->
-              <q-expansion-item
-                v-model="referencesExpanded" 
-                dense
-                expand-separator
-                class="text-grey-7"
-                style="min-height: 50px;"
-              >
-                <template v-slot:header>
-                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
-                    References ({{ references.length }})
-                  </q-item-section>
-                </template>
-                
-                <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
-                  <q-list dense class="q-pa-none">
-                    <q-item 
-                      v-for="reference in references" 
-                      :key="reference.id"
-                      dense
-                      clickable
-                      class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
-                    >
-                      <q-item-section avatar class="min-width-auto q-pr-xs">
-                        <q-icon name="description" size="14px" color="red-5" />
-                      </q-item-section>
-                      <q-item-section>
-                        <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
-                          {{ reference.title }}
-                        </q-item-label>
-                        <q-item-label caption class="text-grey-6">
-                          {{ reference.type }} • {{ reference.pages }}p
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </div>
-              </q-expansion-item>
-
-              <!-- Media Files section -->
-              <q-expansion-item
-                v-model="mediaFilesExpanded"
-                dense
-                expand-separator
-                class="text-grey-7"
-                style="min-height: 50px;"
-              >
-                <template v-slot:header>
-                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
-                    Media Files ({{ mediaFiles.length }})
-                  </q-item-section>
-                </template>
-                
-                <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
-                  <q-list dense class="q-pa-none">
-                    <q-item 
-                      v-for="media in mediaFiles" 
-                      :key="media.id"
-                      dense
-                      clickable
-                      class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
-                    >
-                      <q-item-section avatar class="min-width-auto q-pr-xs">
-                        <q-icon name="image" size="14px" color="blue-5" />
-                      </q-item-section>
-                      <q-item-section>
-                        <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
-                          {{ media.name }}
-                        </q-item-label>
-                        <q-item-label caption class="text-grey-6">
-                          {{ media.type }} • {{ media.size }}
-                        </q-item-label>
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </div>
-              </q-expansion-item>
+              <ReferenceList
+                v-model:expanded="referencesExpanded"
+                :references="references"
+                @add="showReferenceSearch = true"
+                @select="openReference"
+              />
+              <MediaList
+                v-model:expanded="mediaFilesExpanded"
+                :media="mediaFiles"
+                @select="editMedia"
+                @delete="deleteMedia"
+              />
             </q-list>
           </div>
         </div>
@@ -283,6 +223,59 @@
           <!-- Sidebar content -->
           <div class="flex-1 overflow-y-auto min-h-0">
             <q-list dense class="q-pa-none">
+              <!-- Project Information section -->
+              <q-expansion-item
+                v-if="currentProject && !isNewProject"
+                v-model="projectInfoExpanded" 
+                dense
+                expand-separator
+                class="text-grey-7"
+                style="min-height: 50px;"
+              >
+                <template v-slot:header>
+                  <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
+                    Project Information
+                  </q-item-section>
+                </template>
+                
+                <div class="q-pa-sm">
+                  <!-- Project ID badge with edit button -->
+                  <div class="q-mb-sm q-pa-sm bg-blue-1 rounded">
+                    <div class="row items-center justify-between">
+                      <div class="text-caption text-weight-bold text-blue-9">ID: {{ currentProject.id }}</div>
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        size="xs"
+                        color="blue-7"
+                        icon="edit"
+                        @click="showProjectEdit = true"
+                        class="q-ml-sm"
+                      >
+                        <q-tooltip class="text-caption">Edit Project</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
+                  
+                  <!-- Project details -->
+                  <div class="column q-gutter-y-xs">
+                    <div class="q-pa-xs bg-grey-2 rounded">
+                      <div class="text-caption text-weight-bold text-grey-9">{{ currentProject.label }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Project Name</div>
+                    </div>
+                    <div v-if="currentProject.description" class="q-pa-xs bg-grey-2 rounded">
+                      <div class="text-caption text-grey-9">{{ currentProject.description }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Description</div>
+                    </div>
+                    <div v-if="currentProject.coauthors" class="q-pa-xs bg-grey-2 rounded">
+                      <div class="text-caption text-grey-9">{{ currentProject.coauthors }}</div>
+                      <div class="text-caption text-grey-6" style="font-size: 10px;">Co-authors</div>
+                    </div>
+                  </div>
+                </div>
+              </q-expansion-item>
+
               <!-- Document Stats section -->
               <q-expansion-item
                 v-model="documentStatsExpanded" 
@@ -400,8 +393,9 @@
                 </div>
               </q-expansion-item>
             </q-list>
-          </div>
-        </template>
+    </div>
+
+  </template>
         
         <template v-else>
           <!-- Sidebar header collapsed -->
@@ -436,26 +430,128 @@
               icon="edit"
               class="q-pa-xs"
             />
-            <q-btn 
-              flat
-              round
-              dense
-              size="sm"
-              color="grey-6"
-              icon="download"
-              class="q-pa-xs"
-            />
-          </div>
-        </template>
+              <q-btn
+                flat
+                round
+                dense
+                size="sm"
+                color="grey-6"
+                icon="download"
+                class="q-pa-xs"
+              />
+            </div>
+          </template>
+        </div>
       </div>
     </div>
-  </div>
-</template>
+    <FileActionDialog
+      :show="showFileAction"
+      @close="showFileAction = false"
+      @upload-pdf="handleUploadPdf"
+      @search-pubmed="handleSearchPubMed"
+      @upload-media="handleUploadMedia"
+    />
+
+    <FileUpload
+      :show="showPdfUpload"
+      accept=".pdf"
+      @close="showPdfUpload = false"
+      @files-selected="uploadPdfFiles"
+    />
+
+    <FileUpload
+      :show="showMediaUpload"
+      accept="image/*,audio/*,video/*"
+      @close="showMediaUpload = false"
+      @files-selected="uploadMediaFiles"
+    />
+
+    <PubMedSearch
+      :show="showPubMedSearch"
+      @close="showPubMedSearch = false"
+    />
+
+    <ReferenceSearchDialog
+      v-if="projectId"
+      :show="showReferenceSearch"
+      :project-id="projectId"
+      @close="showReferenceSearch = false"
+      @added="handleReferenceAdded"
+    />
+
+    <MediaEditDialog
+      :show="showMediaEdit"
+      :media="selectedMedia"
+      @close="showMediaEdit = false"
+      @updated="handleMediaUpdated"
+    />
+
+    <NewProjectDialog
+      :show="showNewProject"
+      @close="handleNewProjectClose"
+      @created="handleProjectCreated"
+    />
+
+    <ProjectEditDialog
+      :show="showProjectEdit"
+      :project="currentProject"
+      @close="showProjectEdit = false"
+      @updated="handleProjectUpdated"
+      @deleted="handleProjectDeleted"
+    />
+  </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '../components/ui/BaseButton.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
+import FileActionDialog from '../components/project/FileActionDialog.vue'
+import FileUpload from '../components/ui/FileUpload.vue'
+import PubMedSearch from '../components/ui/PubMedSearch.vue'
+import ReferenceSearchDialog from '../components/project/ReferenceSearchDialog.vue'
+import ReferenceList from '../components/project/ReferenceList.vue'
+import MediaList from '../components/project/MediaList.vue'
+import MediaEditDialog from '../components/ui/MediaEditDialog.vue'
+import NewProjectDialog from '../components/project/NewProjectDialog.vue'
+import ProjectEditDialog from '../components/project/ProjectEditDialog.vue'
+import { useReferenceStore } from '../stores/reference'
+import { useMediaStore } from '../stores/media'
+import { useUserStore } from '../stores/user'
+import { useProjectStore } from '../stores/project'
+
+// Stores and routing
+const route = useRoute()
+const router = useRouter()
+const referenceStore = useReferenceStore()
+const mediaStore = useMediaStore()
+const userStore = useUserStore()
+const projectStore = useProjectStore()
+
+// Dialog states
+const showFileAction = ref(false)
+const showPdfUpload = ref(false)
+const showMediaUpload = ref(false)
+const showPubMedSearch = ref(false)
+const showReferenceSearch = ref(false)
+const showMediaEdit = ref(false)
+const showNewProject = ref(false)
+const showProjectEdit = ref(false)
+const selectedMedia = ref(null)
+const droppedFiles = ref([])
+
+const projectId = computed(() => {
+  const id = route.params.id
+  console.log('ProjectPage route params:', route.params)
+  console.log('Extracted project ID:', id)
+  console.log('Current route path:', route.path)
+  return id ? parseInt(id, 10) : null
+})
+
+const isNewProject = computed(() => route.path === '/project/new')
+
+// Current project data
+const currentProject = ref(null)
 
 // Sidebar states
 const leftSidebarCollapsed = ref(false)
@@ -466,9 +562,16 @@ const mediaFilesExpanded = ref(true)
 const documentStatsExpanded = ref(true)
 const writingToolsExpanded = ref(true)
 const exportOptionsExpanded = ref(true)
+const projectInfoExpanded = ref(true)
 
 // Project data
-const projectTitle = ref('Research Paper Draft')
+const projectTitle = computed(() => {
+  if (isNewProject.value) {
+    return 'New Project'
+  }
+  return currentProject.value?.label || 'Loading Project...'
+})
+
 const documentTitle = ref('The Impact of AI on Modern Writing')
 const documentContent = ref('Start writing your document here...')
 
@@ -495,17 +598,152 @@ const chatMessages = ref([
   }
 ])
 
-// Sample data
-const references = ref([
-  { id: 1, title: 'AI and Writing Automation', type: 'PDF', pages: 25 },
-  { id: 2, title: 'Modern Content Creation', type: 'PDF', pages: 18 },
-  { id: 3, title: 'Digital Writing Tools Study', type: 'PDF', pages: 32 }
-])
+const references = computed(() => referenceStore.references)
+const mediaFiles = computed(() => mediaStore.media)
 
-const mediaFiles = ref([
-  { id: 1, name: 'research_chart.png', type: 'Image', size: '2.3 MB' },
-  { id: 2, name: 'interview_audio.mp3', type: 'Audio', size: '15.7 MB' }
-])
+// File handling
+function handleAddFilesClick() {
+  droppedFiles.value = []
+  showFileAction.value = true
+}
+
+// Note: Drag and drop functionality removed in favor of button-based file selection
+
+async function handleUploadPdf() {
+  if (droppedFiles.value.length) {
+    await uploadPdfFiles(droppedFiles.value)
+    droppedFiles.value = []
+    showFileAction.value = false
+  } else {
+    showFileAction.value = false
+    showPdfUpload.value = true
+  }
+}
+
+async function uploadPdfFiles(files) {
+  for (const file of files) {
+    await referenceStore.upload({
+      projectIds: projectId.value ? [projectId.value] : [],
+      query: file.name,
+      file
+    })
+  }
+}
+
+function handleSearchPubMed() {
+  showFileAction.value = false
+  showPubMedSearch.value = true
+}
+
+async function handleUploadMedia() {
+  if (droppedFiles.value.length) {
+    await uploadMediaFiles(droppedFiles.value)
+    droppedFiles.value = []
+    showFileAction.value = false
+  } else {
+    showFileAction.value = false
+    showMediaUpload.value = true
+  }
+}
+
+async function uploadMediaFiles(files) {
+  if (!projectId.value) {
+    if (isNewProject.value) {
+      console.error('Cannot upload media files to a new project. Please save the project first.')
+      // TODO: Show user-friendly notification that project needs to be saved first
+      alert('Please save your project before uploading media files.')
+      return
+    } else {
+      console.error('No project ID available for media upload')
+      return
+    }
+  }
+  
+  console.log('Starting media upload for', files.length, 'files')
+  
+  let successCount = 0
+  let errorCount = 0
+  
+  for (const file of files) {
+    console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size)
+    try {
+      const result = await mediaStore.upload({ 
+        projectId: projectId.value, 
+        file, 
+        label: file.name 
+      })
+      
+      if (result.success) {
+        console.log('Upload successful for:', file.name)
+        successCount++
+      } else {
+        console.error('Upload failed for:', file.name, 'Error:', result.error)
+        errorCount++
+      }
+    } catch (error) {
+      console.error('Upload error for:', file.name, error)
+      errorCount++
+    }
+  }
+  
+  // Show summary
+  console.log(`Upload complete: ${successCount} successful, ${errorCount} failed`)
+  
+  // Refresh the media list after upload
+  if (projectId.value && successCount > 0) {
+    try {
+      await mediaStore.fetch(projectId.value)
+      console.log('Media list refreshed')
+    } catch (error) {
+      console.error('Failed to refresh media list:', error)
+    }
+  }
+}
+
+import { useApiStore } from '../stores/api'
+const apiStore = useApiStore()
+
+function openReference(ref) {
+  if (!ref?.id) return
+  window.open(`${apiStore.baseUrl}/references/${ref.id}/file?token=${userStore.token}`, '_blank')
+}
+
+function editMedia(media) {
+  if (!media) return
+  selectedMedia.value = media
+  showMediaEdit.value = true
+}
+
+async function deleteMedia(media) {
+  if (!media?.id) return
+  
+  // Show confirmation dialog
+  const confirmed = confirm(`Are you sure you want to delete "${media.filename || media.label}"? This action cannot be undone.`)
+  if (!confirmed) return
+  
+  console.log('Deleting media:', media.filename || media.label)
+  
+  try {
+    const result = await mediaStore.delete(media.id)
+    
+    if (result.success) {
+      console.log('Media deleted successfully')
+      // Media is automatically removed from the store, so the UI will update
+    } else {
+      console.error('Failed to delete media:', result.error)
+      alert(`Failed to delete media: ${result.error}`)
+    }
+  } catch (error) {
+    console.error('Error deleting media:', error)
+    alert('Failed to delete media. Please try again.')
+  }
+}
+
+async function handleMediaUpdated() {
+  if (projectId.value) {
+    await mediaStore.fetch(projectId.value)
+  }
+}
 
 // Document stats computed property
 const documentStats = computed(() => {
@@ -543,9 +781,86 @@ const sendMessage = () => {
   }, 1000)
 }
 
-onMounted(() => {
-  // Any initialization logic here
+onMounted(async () => {
+  if (projectId.value) {
+    // Load project data and related items
+    await loadProjectData()
+  } else if (isNewProject.value) {
+    // Show new project dialog when on /project/new route
+    showNewProject.value = true
+  }
 })
+
+async function loadProjectData() {
+  if (!projectId.value) return
+  
+  try {
+    // Load project details
+    const projectResult = await projectStore.fetchById(projectId.value)
+    if (projectResult.success) {
+      currentProject.value = projectResult.data
+      console.log('Loaded project:', currentProject.value)
+    } else {
+      console.error('Failed to load project:', projectResult.error)
+    }
+
+    // Load references and media in parallel
+    await Promise.all([
+      referenceStore.fetchAll(projectId.value),
+      mediaStore.fetch(projectId.value)
+    ])
+  } catch (error) {
+    console.error('Error loading project data:', error)
+  }
+}
+
+// Watch for route changes to handle new project dialog and project changes
+watch(() => route.path, (newPath) => {
+  if (newPath === '/project/new') {
+    showNewProject.value = true
+    currentProject.value = null
+  }
+}, { immediate: true })
+
+// Watch for project ID changes to reload data
+watch(() => projectId.value, async (newProjectId, oldProjectId) => {
+  if (newProjectId && newProjectId !== oldProjectId) {
+    await loadProjectData()
+  }
+})
+
+async function handleReferenceAdded() {
+  if (projectId.value) {
+    await referenceStore.fetchAll(projectId.value)
+  }
+}
+
+function handleNewProjectClose() {
+  showNewProject.value = false
+  // If user cancels new project creation, redirect to dashboard
+  // since they can't stay on /project/new without a project
+  if (isNewProject.value) {
+    router.push('/dashboard')
+  }
+}
+
+async function handleProjectCreated(project) {
+  console.log('Project created:', project)
+  // Navigate to the new project page
+  await router.push(`/project/${project.id}`)
+}
+
+async function handleProjectUpdated(updatedProject) {
+  console.log('Project updated:', updatedProject)
+  // Update the current project data
+  currentProject.value = updatedProject
+}
+
+async function handleProjectDeleted(deletedProject) {
+  console.log('Project deleted:', deletedProject)
+  // Navigate back to dashboard
+  await router.push('/dashboard')
+}
 </script>
 
 <style scoped>

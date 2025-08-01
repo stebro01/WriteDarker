@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "setup": "bash -c 'if [ ! -d venv ]; then python -m venv venv && ./venv/bin/pip install -r requirements.txt; fi && cd frontend && npm install'",
-    "start:backend": "./venv/bin/uvicorn backend.main:app --reload",
+    "start:backend": "./venv/bin/uvicorn backend.main:app --reload --port ${PORT_BACKEND:-3000}",
     "start:frontend": "cd frontend && npm run dev",
     "start": "concurrently -k \"npm run start:backend\" \"npm run start:frontend\"",
     "test:e2e": "cd frontend && npm run test:e2e"

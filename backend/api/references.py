@@ -21,9 +21,15 @@ def _ref_to_dict(ref: models.Reference) -> dict:
         "filename": ref.filename,
         "filetype": ref.filetype,
         "file_hash": ref.file_hash,
+        # PubMed fields
+        "pubmed_id": ref.pubmed_id,
+        "doi": ref.doi,
+        "abstract": ref.abstract,
+        "keywords": ref.keywords,
+        "publication_date": ref.publication_date,
+        "url": ref.url,
+        "citation": ref.citation,
     }
-    if ref.pubmed_id:
-        data["pubmed_id"] = ref.pubmed_id
     return data
 
 router = APIRouter()
@@ -220,6 +226,36 @@ def list_references(project_id: int, token: str, db: Session = Depends(get_db)):
         .all()
     )
     return [_ref_to_dict(r) for r in refs]
+
+
+@router.post("/{ref_id}/projects/{project_id}")
+def add_reference_to_project(ref_id: int, project_id: int, token: str, db: Session = Depends(get_db)):
+    """Associate an existing reference with a project."""
+    user = get_current_user(token, db)
+
+    ref = (
+        db.query(models.Reference)
+        .join(models.Reference.shared_with)
+        .filter(models.Reference.id == ref_id, models.User.id == user.id)
+        .first()
+    )
+    if not ref:
+        raise HTTPException(status_code=404, detail="Reference not found")
+
+    project = (
+        db.query(models.Project)
+        .filter(models.Project.id == project_id, models.Project.author_id == user.id)
+        .first()
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project not in ref.projects:
+        ref.projects.append(project)
+        db.commit()
+        db.refresh(ref)
+
+    return _ref_to_dict(ref)
 
 
 

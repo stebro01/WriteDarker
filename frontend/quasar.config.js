@@ -75,6 +75,7 @@ export default defineConfig((/* ctx */) => {
     devServer: {
       // https: true,
       // open: true, // opens browser window automatically
+      port: process.env.VITE_PORT_FRONTEND || 8080,
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
@@ -114,7 +115,7 @@ export default defineConfig((/* ctx */) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-ssr/configuring-ssr
     ssr: {
-      prodPort: 3000, // The default port that the production server should use
+      prodPort: 3001, // The default port that the production server should use
       // (gets superseded if process.env.PORT is specified at runtime)
 
       middlewares: [

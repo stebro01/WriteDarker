@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:${import.meta.env.VITE_PORT_BACKEND || 3000}`
 
 export const useApiStore = defineStore('api', {
   state: () => ({
@@ -12,6 +12,7 @@ export const useApiStore = defineStore('api', {
   getters: {
     isLoading: (state) => state.loading,
     hasError: (state) => !!state.error,
+    baseUrl: () => API_BASE_URL,
   },
 
   actions: {

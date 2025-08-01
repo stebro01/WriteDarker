@@ -33,17 +33,26 @@ class PubMedService:
             for article in results:
                 try:
                     # Extract article metadata
+                    raw_pmid = getattr(article, 'pubmed_id', None)
+                    raw_doi = getattr(article, 'doi', '')
+                    
+                    # Clean up PMID - take only the first one if multiple are concatenated
+                    clean_pmid = self._extract_first_id(raw_pmid) if raw_pmid else None
+                    
+                    # Clean up DOI - take only the first one if multiple are concatenated
+                    clean_doi = self._extract_first_doi(raw_doi) if raw_doi else ''
+                    
                     article_data = {
-                        'pubmed_id': getattr(article, 'pubmed_id', None),
+                        'pubmed_id': clean_pmid,
                         'title': getattr(article, 'title', ''),
                         'abstract': getattr(article, 'abstract', ''),
                         'authors': self._format_authors(getattr(article, 'authors', [])),
                         'journal': getattr(article, 'journal', ''),
                         'publication_date': self._format_date(getattr(article, 'publication_date', None)),
-                        'doi': getattr(article, 'doi', ''),
+                        'doi': clean_doi,
                         'keywords': getattr(article, 'keywords', []),
-                        'url': f"https://pubmed.ncbi.nlm.nih.gov/{getattr(article, 'pubmed_id', '')}" if getattr(article, 'pubmed_id', None) else '',
-                        'citation': self._format_citation(article)
+                        'url': f"https://pubmed.ncbi.nlm.nih.gov/{clean_pmid}" if clean_pmid else '',
+                        'citation': self._format_citation(article, clean_pmid, clean_doi)
                     }
                     articles.append(article_data)
                 except Exception as e:
@@ -140,7 +149,49 @@ class PubMedService:
             logger.warning(f"Error formatting date: {e}")
             return str(date) if date else None
     
-    def _format_citation(self, article) -> str:
+    def _extract_first_id(self, id_string) -> Optional[str]:
+        """Extract the first ID from a potentially concatenated string of IDs."""
+        if not id_string:
+            return None
+        
+        # Convert to string and split by whitespace or newlines
+        id_str = str(id_string).strip()
+        if not id_str:
+            return None
+        
+        # Split by whitespace and take the first valid ID
+        parts = id_str.split()
+        for part in parts:
+            part = part.strip()
+            # Check if it looks like a valid PMID (digits only)
+            if part.isdigit() and len(part) >= 6:  # PMIDs are typically 6+ digits
+                return part
+        
+        # If no valid numeric ID found, return the first part
+        return parts[0] if parts else None
+    
+    def _extract_first_doi(self, doi_string) -> str:
+        """Extract the first DOI from a potentially concatenated string of DOIs."""
+        if not doi_string:
+            return ""
+        
+        # Convert to string and split by whitespace or newlines
+        doi_str = str(doi_string).strip()
+        if not doi_str:
+            return ""
+        
+        # Split by whitespace and take the first valid DOI
+        parts = doi_str.split()
+        for part in parts:
+            part = part.strip()
+            # Check if it looks like a valid DOI (contains a dot and slash)
+            if '/' in part and '.' in part:
+                return part
+        
+        # If no valid DOI found, return the first part
+        return parts[0] if parts else ""
+    
+    def _format_citation(self, article, clean_pmid=None, clean_doi=None) -> str:
         """Format a citation string for the article."""
         try:
             authors = self._format_authors(getattr(article, 'authors', []))
@@ -165,7 +216,13 @@ class PubMedService:
             elif date:
                 citation_parts.append(date)
             
-            return ". ".join(citation_parts) + "." if citation_parts else ""
+            citation = ". ".join(citation_parts) + "." if citation_parts else ""
+            
+            # Use the cleaned DOI if provided
+            if clean_doi:
+                citation += f" doi: {clean_doi}"
+            
+            return citation
             
         except Exception as e:
             logger.warning(f"Error formatting citation: {e}")

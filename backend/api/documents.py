@@ -1,6 +1,7 @@
 """API endpoints for document management."""
 
-from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, status, Form
+from fastapi.responses import Response
 from diff_match_patch import diff_match_patch
 from sqlalchemy.orm import Session
 from typing import Optional, List
@@ -36,14 +37,17 @@ def _add_revision(db: Session, doc: models.Document):
 @router.post("/", response_model=schemas.DocumentRead)
 def create_document(
     token: str,
-    text: Optional[str] = None,
+    text: Optional[str] = Form(None),
     pdf: Optional[UploadFile] = File(None),
     image: Optional[UploadFile] = File(None),
-    label: Optional[str] = None,
-    description: Optional[str] = None,
-    notes: Optional[str] = None,
-    project_id: Optional[int] = None,
-    position: Optional[int] = None,
+    label: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    notes: Optional[str] = Form(None),
+    tag: Optional[str] = Form(None),
+    filename: Optional[str] = Form(None),
+    filetype: Optional[str] = Form(None),
+    project_id: Optional[int] = Form(None),
+    position: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
     """Create a new document owned by the current user."""
@@ -55,6 +59,8 @@ def create_document(
     if pdf is not None:
         content = pdf.file.read()
         pdf_bytes = content
+        filename = filename or pdf.filename
+        filetype = filetype or pdf.content_type
         try:
             reader = PdfReader(io.BytesIO(content))
             extracted_text = "\n".join(page.extract_text() or "" for page in reader.pages)
@@ -64,6 +70,8 @@ def create_document(
     image_bytes = None
     if image is not None:
         image_bytes = image.file.read()
+        filename = filename or image.filename
+        filetype = filetype or image.content_type
 
     doc = models.Document(
         text=extracted_text,
@@ -72,6 +80,9 @@ def create_document(
         label=label,
         description=description,
         notes=notes,
+        tag=tag,
+        filename=filename,
+        filetype=filetype,
         project_id=project_id,
         position=position or 0,
         creator_id=user.id,
@@ -118,6 +129,12 @@ def update_document(
         doc.description = update.description
     if update.notes is not None:
         doc.notes = update.notes
+    if update.tag is not None:
+        doc.tag = update.tag
+    if update.filename is not None:
+        doc.filename = update.filename
+    if update.filetype is not None:
+        doc.filetype = update.filetype
     if update.project_id is not None:
         doc.project_id = update.project_id
     if update.position is not None:
@@ -157,6 +174,8 @@ def upload_pdf(doc_id: int, token: str, pdf: UploadFile = File(...), db: Session
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     doc.pdf = pdf.file.read()
+    doc.filename = pdf.filename
+    doc.filetype = pdf.content_type
     db.commit()
     db.refresh(doc)
     return doc
@@ -170,9 +189,34 @@ def upload_image(doc_id: int, token: str, image: UploadFile = File(...), db: Ses
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     doc.image = image.file.read()
+    doc.filename = image.filename
+    doc.filetype = image.content_type
     db.commit()
     db.refresh(doc)
     return doc
+
+
+@router.get("/{doc_id}/file")
+def get_document_file(doc_id: int, token: str, db: Session = Depends(get_db)):
+    """Return binary file content for a document."""
+    user = get_current_user(token, db)
+    doc = (
+        db.query(models.Document)
+        .filter(models.Document.id == doc_id, models.Document.creator_id == user.id)
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    content = doc.pdf or doc.image
+    if not content:
+        raise HTTPException(status_code=404, detail="No file content available")
+    media_type = doc.filetype or ("application/pdf" if doc.pdf else "application/octet-stream")
+    filename = doc.filename or f"document_{doc_id}"
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f"inline; filename={filename}"},
+    )
 
 
 @router.get("/{doc_id}/revisions", response_model=List[schemas.DocumentRevisionRead])
