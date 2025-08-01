@@ -222,7 +222,7 @@ function previewMedia(media) {
 
 function openMediaInWindow(media) {
   if (!media?.id) return
-  window.open(`${apiStore.baseUrl}/media/${media.id}/file?token=${userStore.token}`, '_blank')
+  window.open(`${apiStore.baseUrl}/documents/${media.id}/file?token=${userStore.token}`, '_blank')
 }
 
 function editMedia(media) {

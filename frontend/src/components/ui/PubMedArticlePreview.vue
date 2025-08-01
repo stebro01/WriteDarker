@@ -1,28 +1,26 @@
 <template>
-  <div v-if="show && reference" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="handleBackdropClick">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden" @click.stop>
-      <!-- Header -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-200">
-        <div class="flex items-center">
-          <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mr-3">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-          </div>
-          <div>
-            <h3 class="text-lg font-medium text-gray-900" v-if="mode">{{ mode === 'library' ? 'PubMed Article' : 'Article Preview' }}</h3>
-            <p class="text-sm text-gray-600">PMID: {{ reference?.pubmed_id || 'N/A' }}</p>
-          </div>
-        </div>
-        <button @click="handleClose" class="text-gray-400 hover:text-gray-600 transition-colors">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+  <BaseModal
+    :show="show && !!reference"
+    @close="handleClose"
+    :title="mode === 'library' ? 'PubMed Article' : 'Article Preview'"
+    :subtitle="`PMID: ${reference?.pubmed_id || 'N/A'}`"
+    size="xl"
+  >
+    <template #header>
+      <div class="flex items-center">
+        <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mr-3">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
-        </button>
+        </div>
+        <div>
+          <h3 class="text-xl font-semibold text-gray-900">{{ mode === 'library' ? 'PubMed Article' : 'Article Preview' }}</h3>
+          <p class="text-sm text-gray-600 mt-1">PMID: {{ reference?.pubmed_id || 'N/A' }}</p>
+        </div>
       </div>
+    </template>
 
-      <!-- Content -->
-      <div class="flex-1 overflow-auto p-6" style="max-height: 70vh;">
+    <div class="space-y-6">
         <!-- Title -->
         <div class="mb-6">
           <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ reference?.title || 'No title available' }}</h1>
@@ -137,25 +135,16 @@
             </a>
           </div>
         </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="flex items-center justify-between p-6 border-t border-gray-200">
-        <div class="text-sm text-gray-500">
-          PubMed ID: {{ reference?.pubmed_id || 'N/A' }}
-        </div>
-        <div class="flex space-x-3">
-          <BaseButton variant="outline" @click="handleClose">
-            Close
-          </BaseButton>
-        </div>
-      </div>
     </div>
-  </div>
+
+    <template #footer>
+
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
-import BaseButton from './BaseButton.vue'
+import BaseModal from './BaseModal.vue'
 
 const props = defineProps({
   show: {
@@ -179,10 +168,6 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const handleClose = () => {
-  emit('close')
-}
-
-const handleBackdropClick = () => {
   emit('close')
 }
 

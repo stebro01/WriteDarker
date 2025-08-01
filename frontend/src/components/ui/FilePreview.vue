@@ -1,21 +1,12 @@
 <template>
-  <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="closePreview">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full mx-4 flex flex-col" @click.stop>
-      <!-- Header -->
-      <div class="flex items-center justify-between p-4 border-b">
-        <div>
-          <h3 class="text-lg font-semibold text-gray-900">{{ reference?.title || 'Preview' }}</h3>
-          <p v-if="reference && reference.filename !== reference.title" class="text-sm text-gray-600">{{ reference?.filename || 'No filename' }}</p>
-        </div>
-        <button @click="closePreview" class="text-gray-400 hover:text-gray-600 transition-colors">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Content Area -->
-      <div class="flex-1 overflow-auto p-4">
+  <BaseModal
+    :show="show"
+    @close="closePreview"
+    :title="reference?.title || 'Preview'"
+    :subtitle="reference && reference.filename !== reference.title ? reference?.filename || 'No filename' : ''"
+    size="xl"
+  >
+    <div class="space-y-4">
         <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center h-64">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -69,36 +60,24 @@
             <p class="text-sm text-gray-500">{{ reference?.filetype || 'Unknown file type' }}</p>
           </div>
         </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="flex items-center justify-between p-4 border-t bg-gray-50">
-        <div class="text-sm text-gray-600">
-          <span v-if="reference?.filetype">{{ reference.filetype }}</span>
-          <span v-if="reference?.authors" class="ml-4">{{ reference.authors }}</span>
-        </div>
-        <div class="flex space-x-2">
-          <button
-            v-if="fileUrl"
-            @click="downloadFile"
-            class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            Download
-          </button>
-          <button
-            @click="closePreview"
-            class="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
-          >
-            Close
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
+
+    <template #footer>
+      <button
+        v-if="fileUrl"
+        @click="downloadFile"
+        class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+      >
+        Download
+      </button>
+
+    </template>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import BaseModal from './BaseModal.vue'
 import { useUserStore } from '../../stores/user'
 import { useApiStore } from '../../stores/api'
 

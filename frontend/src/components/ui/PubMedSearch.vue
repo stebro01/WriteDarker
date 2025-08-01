@@ -187,6 +187,22 @@
           <p class="text-gray-600">Enter search terms above to find research articles</p>
         </div>
       </div>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+        <div class="text-sm text-gray-600">
+          <span v-if="searchResults.length">{{ searchResults.length }} result{{ searchResults.length !== 1 ? 's' : '' }} found</span>
+          <span v-else-if="hasSearched && !loading">No results found</span>
+        </div>
+        <div class="flex space-x-2">
+          <button
+            @click="handleClose"
+            class="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
