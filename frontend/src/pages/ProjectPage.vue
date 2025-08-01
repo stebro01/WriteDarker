@@ -53,8 +53,7 @@
       <div class="flex-1 flex flex-col bg-white min-h-0">
         <!-- Document editor -->
         <DocumentEditor
-          v-model:title="documentTitle"
-          v-model:content="documentContent"
+          :project-id="projectId"
         />
 
         <!-- AI Chat section -->
@@ -71,7 +70,7 @@
         :collapsed="rightSidebarCollapsed"
         :current-project="currentProject"
         :is-new-project="isNewProject"
-        :document-content="documentContent"
+        :project-id="projectId"
         @toggle-collapse="rightSidebarCollapsed = !rightSidebarCollapsed"
         @edit-project="showProjectEdit = true"
       />
@@ -201,8 +200,7 @@ const projectTitle = computed(() => {
   return currentProject.value?.label || 'Loading Project...'
 })
 
-const documentTitle = ref('The Impact of AI on Modern Writing')
-const documentContent = ref('Start writing your document here...')
+// Document management is now handled by DocumentListEditor component
 
 // Chat functionality
 const chatMessages = ref([

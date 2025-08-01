@@ -292,3 +292,31 @@ def list_project_documents(project_id: int, token: str, db: Session = Depends(ge
         .all()
     )
     return docs
+
+
+@router.post("/project/{project_id}/reorder")
+def reorder_project_documents(project_id: int, document_ids: List[int], token: str, db: Session = Depends(get_db)):
+    """Reorder documents in a project by updating their positions."""
+    user = get_current_user(token, db)
+    
+    # Verify all documents belong to the user and project
+    docs = (
+        db.query(models.Document)
+        .filter(
+            models.Document.project_id == project_id,
+            models.Document.creator_id == user.id,
+            models.Document.id.in_(document_ids)
+        )
+        .all()
+    )
+    
+    if len(docs) != len(document_ids):
+        raise HTTPException(status_code=400, detail="Some documents not found or don't belong to user")
+    
+    # Update positions
+    for i, doc_id in enumerate(document_ids):
+        doc = next(d for d in docs if d.id == doc_id)
+        doc.position = i
+    
+    db.commit()
+    return {"message": "Documents reordered successfully"}

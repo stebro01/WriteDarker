@@ -90,10 +90,16 @@
             </template>
             
             <div class="q-pa-sm">
+              <!-- Document count -->
+              <div class="q-mb-sm q-pa-sm bg-blue-1 rounded text-center">
+                <div class="text-h6 text-weight-bold text-blue-9">{{ documentStats.documentCount }}</div>
+                <div class="text-caption text-blue-7">Documents</div>
+              </div>
+              
               <!-- Main word count -->
               <div class="q-mb-sm q-pa-sm bg-grey-2 rounded text-center">
                 <div class="text-h6 text-weight-bold text-grey-9">{{ documentStats.words }}</div>
-                <div class="text-caption text-grey-6">Words</div>
+                <div class="text-caption text-grey-6">Total Words</div>
               </div>
               
               <!-- Secondary stats -->
@@ -243,7 +249,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useDocumentStore } from '../../../stores/document'
 
 // Props
 const props = defineProps({
@@ -259,11 +266,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  documentContent: {
-    type: String,
-    default: ''
+  projectId: {
+    type: Number,
+    default: null
   }
 })
+
+// Store
+const documentStore = useDocumentStore()
 
 // Emits
 defineEmits([
@@ -279,11 +289,43 @@ const exportOptionsExpanded = ref(true)
 
 // Computed properties
 const documentStats = computed(() => {
-  const text = props.documentContent || ''
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0
-  const characters = text.length
-  const paragraphs = text.trim() ? text.split(/\n\s*\n/).length : 0
+  if (!props.projectId) {
+    return { words: 0, characters: 0, paragraphs: 0, documentCount: 0 }
+  }
   
-  return { words, characters, paragraphs }
+  const documents = documentStore.documentsByProject(props.projectId)
+  
+  let totalWords = 0
+  let totalCharacters = 0
+  let totalParagraphs = 0
+  
+  documents.forEach(doc => {
+    const text = doc.text || ''
+    if (text.trim()) {
+      totalWords += text.trim().split(/\s+/).length
+      totalCharacters += text.length
+      totalParagraphs += text.split(/\n\s*\n/).length
+    }
+  })
+  
+  return { 
+    words: totalWords, 
+    characters: totalCharacters, 
+    paragraphs: totalParagraphs,
+    documentCount: documents.length
+  }
+})
+
+// Load documents when component mounts or project changes
+onMounted(() => {
+  if (props.projectId) {
+    documentStore.fetchByProject(props.projectId)
+  }
+})
+
+watch(() => props.projectId, (newProjectId) => {
+  if (newProjectId) {
+    documentStore.fetchByProject(newProjectId)
+  }
 })
 </script>
