@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteDarker - Document</title>
+  
+  <!-- Import Vue 3 and dependencies -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/marked@4.3.0/marked.min.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom styles -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f9fafb;
+    }
+    
+    .prose {
+      color: inherit;
+      max-width: none;
+    }
+    
+    .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+      color: #111827;
+    }
+    
+    .prose p {
+      margin-top: 0.75em;
+      margin-bottom: 0.75em;
+      color: #374151;
+    }
+    
+    .prose ul, .prose ol {
+      margin-top: 0.75em;
+      margin-bottom: 0.75em;
+    }
+    
+    /* Custom scrollbar */
+    textarea::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    textarea::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    textarea::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    textarea::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-size: 1.1rem;
+      color: #6b7280;
+    }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e5e7eb;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Loading State -->
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      Loading document...
+    </div>
+    
+    <!-- Document Editor -->
+    <div v-else class="h-screen flex flex-col">
+      <!-- Header -->
+      <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <h1 class="text-xl font-semibold text-gray-900">
+            {{ document?.label || 'Document' }}
+          </h1>
+          <div v-if="hasUnsavedChanges" class="flex items-center text-orange-600 text-sm">
+            <div class="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+            Unsaved changes
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <!-- Save Button -->
+          <button
+            @click="saveDocument"
+            :disabled="!hasUnsavedChanges"
+            :class="[
+              'px-4 py-2 rounded-md text-sm font-medium transition-colors',
+              hasUnsavedChanges 
+                ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ]"
+          >
+            Save
+          </button>
+          
+          <!-- Mode Toggle -->
+          <button
+            @click="toggleMode"
+            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+          >
+            {{ isEditing ? 'Preview' : 'Edit' }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content Area -->
+      <div class="flex-1 overflow-hidden">
+        <!-- Edit Mode -->
+        <div v-if="isEditing" class="h-full flex flex-col">
+          <!-- Formatting Toolbar -->
+          <div class="bg-gray-50 border-b border-gray-200 px-6 py-3 flex items-center space-x-3">
+            <button
+              @click="insertFormat('h1')"
+              class="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+              title="Heading 1"
+            >
+              H1
+            </button>
+            <button
+              @click="insertFormat('h2')"
+              class="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+              title="Heading 2"
+            >
+              H2
+            </button>
+            <button
+              @click="insertFormat('h3')"
+              class="px-3 py-1 text-sm rounded hover:bg-gray-200 transition-colors"
+              title="Heading 3"
+            >
+              H3
+            </button>
+            <div class="w-px h-6 bg-gray-300"></div>
+            <button
+              @click="insertFormat('bold')"
+              class="px-3 py-1 text-sm font-bold rounded hover:bg-gray-200 transition-colors"
+              title="Bold"
+            >
+              B
+            </button>
+            <button
+              @click="insertFormat('italic')"
+              class="px-3 py-1 text-sm italic rounded hover:bg-gray-200 transition-colors"
+              title="Italic"
+            >
+              I
+            </button>
+            <button
+              @click="insertFormat('highlight')"
+              class="px-3 py-1 text-sm rounded hover:bg-gray-200 bg-yellow-200 transition-colors"
+              title="Highlight"
+            >
+              H
+            </button>
+          </div>
+          
+          <!-- Editor -->
+          <div class="flex-1 p-6">
+            <textarea
+              ref="contentEditor"
+              v-model="editableContent"
+              @input="handleContentChange"
+              class="w-full h-full border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Start writing your document content..."
+              @keydown.ctrl.s.prevent="saveDocument"
+            ></textarea>
+          </div>
+        </div>
+        
+        <!-- Preview Mode -->
+        <div v-else class="h-full overflow-auto">
+          <div class="max-w-4xl mx-auto px-6 py-8">
+            <div 
+              class="prose prose-lg max-w-none"
+              v-html="renderedContent"
+            ></div>
+            
+            <!-- Empty State -->
+            <div v-if="!document?.text || document.text.trim() === ''" class="text-center text-gray-500 py-12">
+              <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <p class="text-lg font-medium mb-2">No content yet</p>
+              <p class="mb-4">Switch to edit mode to start writing</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, onUnmounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        // Reactive state
+        const loading = ref(true)
+        const document = ref(null)
+        const editableContent = ref('')
+        const isEditing = ref(true)
+        const hasUnsavedChanges = ref(false)
+        const contentEditor = ref(null)
+        const autoSaveTimeout = ref(null)
+
+        // Get document ID from URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const documentId = parseInt(urlParams.get('id'))
+
+        // Computed
+        const renderedContent = computed(() => {
+          if (!editableContent.value) return ''
+          
+          try {
+            // Configure marked for safe HTML rendering
+            marked.setOptions({
+              breaks: true,
+              gfm: true,
+              sanitize: false,
+            })
+            
+            let html = marked.parse(editableContent.value)
+            
+            // Add yellow highlighting support
+            html = html.replace(/==([^=]+)==/g, '<mark class="bg-yellow-200 px-1 rounded">$1</mark>')
+            
+            return html
+          } catch (error) {
+            console.error('Error rendering markdown:', error)
+            return editableContent.value
+          }
+        })
+
+        // Methods
+        function handleContentChange() {
+          hasUnsavedChanges.value = true
+          scheduleAutoSave()
+        }
+
+        function scheduleAutoSave() {
+          if (autoSaveTimeout.value) {
+            clearTimeout(autoSaveTimeout.value)
+          }
+          
+          autoSaveTimeout.value = setTimeout(() => {
+            if (hasUnsavedChanges.value) {
+              saveDocument()
+            }
+          }, 3000) // Auto-save after 3 seconds of inactivity
+        }
+
+        function saveDocument() {
+          if (!hasUnsavedChanges.value) return
+
+          // Send update to parent window
+          sendToParent('DOCUMENT_UPDATED', {
+            documentId: documentId,
+            updates: {
+              text: editableContent.value
+            }
+          })
+
+          hasUnsavedChanges.value = false
+          
+          if (autoSaveTimeout.value) {
+            clearTimeout(autoSaveTimeout.value)
+            autoSaveTimeout.value = null
+          }
+        }
+
+        function toggleMode() {
+          isEditing.value = !isEditing.value
+          
+          if (isEditing.value) {
+            nextTick(() => {
+              if (contentEditor.value) {
+                contentEditor.value.focus()
+              }
+            })
+          }
+        }
+
+        function insertFormat(type) {
+          if (!contentEditor.value) return
+          
+          const textarea = contentEditor.value
+          const start = textarea.selectionStart
+          const end = textarea.selectionEnd
+          const selectedText = textarea.value.substring(start, end)
+          
+          let replacement = ''
+          let cursorOffset = 0
+          
+          switch (type) {
+            case 'h1':
+              replacement = `# ${selectedText || 'Heading 1'}`
+              cursorOffset = selectedText ? 0 : replacement.length
+              break
+            case 'h2':
+              replacement = `## ${selectedText || 'Heading 2'}`
+              cursorOffset = selectedText ? 0 : replacement.length
+              break
+            case 'h3':
+              replacement = `### ${selectedText || 'Heading 3'}`
+              cursorOffset = selectedText ? 0 : replacement.length
+              break
+            case 'bold':
+              replacement = `**${selectedText || 'bold text'}**`
+              cursorOffset = selectedText ? 0 : replacement.length - 2
+              break
+            case 'italic':
+              replacement = `*${selectedText || 'italic text'}*`
+              cursorOffset = selectedText ? 0 : replacement.length - 1
+              break
+            case 'highlight':
+              replacement = `==${selectedText || 'highlighted text'}==`
+              cursorOffset = selectedText ? 0 : replacement.length - 2
+              break
+          }
+          
+          // Replace the selected text
+          const newText = textarea.value.substring(0, start) + replacement + textarea.value.substring(end)
+          editableContent.value = newText
+          
+          // Set cursor position
+          nextTick(() => {
+            textarea.focus()
+            const newCursorPos = start + replacement.length - cursorOffset
+            textarea.setSelectionRange(newCursorPos, newCursorPos)
+          })
+        }
+
+        function sendToParent(type, data) {
+          if (window.opener) {
+            window.opener.postMessage({
+              type,
+              data,
+              source: 'document_window'
+            }, window.location.origin)
+          }
+        }
+
+        function handleMessage(event) {
+          // Verify origin for security
+          if (event.origin !== window.location.origin) {
+            return
+          }
+
+          const { type, data, source } = event.data || {}
+
+          if (source === 'main_window') {
+            console.log('Received message from main window:', type, data)
+            switch (type) {
+              case 'INIT_DOCUMENT':
+                if (data && data.document) {
+                  document.value = data.document
+                  editableContent.value = data.document.text || ''
+                  loading.value = false
+                  console.log('Document initialized:', data.document.label)
+                }
+                break
+              case 'DOCUMENT_DATA':
+                if (data && data.document) {
+                  document.value = data.document
+                  editableContent.value = data.document.text || ''
+                  loading.value = false
+                  console.log('Document data received:', data.document.label)
+                }
+                break
+            }
+          }
+        }
+
+        // Lifecycle
+        onMounted(() => {
+          console.log('Document window mounted for document ID:', documentId)
+          
+          // Set up message listener
+          window.addEventListener('message', handleMessage)
+          
+          // Notify parent that window is ready
+          sendToParent('WINDOW_READY', { documentId })
+          
+          // Request document data from parent
+          sendToParent('REQUEST_DOCUMENT_DATA', { documentId })
+          
+          // Set up timeout fallback in case no data is received
+          setTimeout(() => {
+            if (loading.value) {
+              console.warn('No document data received after 3 seconds, requesting again')
+              sendToParent('REQUEST_DOCUMENT_DATA', { documentId })
+            }
+          }, 3000)
+          
+          // Handle window close
+          window.addEventListener('beforeunload', () => {
+            if (hasUnsavedChanges.value) {
+              saveDocument()
+            }
+          })
+        })
+
+        onUnmounted(() => {
+          window.removeEventListener('message', handleMessage)
+          
+          if (autoSaveTimeout.value) {
+            clearTimeout(autoSaveTimeout.value)
+          }
+        })
+
+        return {
+          loading,
+          document,
+          editableContent,
+          isEditing,
+          hasUnsavedChanges,
+          contentEditor,
+          renderedContent,
+          handleContentChange,
+          saveDocument,
+          toggleMode,
+          insertFormat
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

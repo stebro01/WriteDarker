@@ -23,20 +23,36 @@
           v-for="reference in references"
           :key="reference.id"
           dense
-          clickable
-          class="q-pa-xs rounded hover:bg-grey-2 cursor-pointer"
-          @click="emit('select', reference)"
+          class="q-pa-xs rounded hover:bg-grey-2"
         >
           <q-item-section avatar class="min-width-auto q-pr-xs">
             <q-icon name="description" size="14px" color="red-5" />
           </q-item-section>
-          <q-item-section>
+          <q-item-section 
+            clickable
+            class="cursor-pointer"
+            @click="emit('preview', reference)"
+          >
             <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
               {{ reference.filename || reference.title }}
             </q-item-label>
             <q-item-label caption class="text-grey-6">
               {{ reference.filetype || 'Unknown' }} • {{ formatFileSize(reference.filesize) }}
             </q-item-label>
+          </q-item-section>
+          <q-item-section side class="min-width-auto">
+            <q-btn
+              flat
+              round
+              dense
+              size="xs"
+              color="blue-6"
+              icon="open_in_new"
+              @click.stop="emit('open-in-window', reference)"
+              class="q-ml-xs"
+            >
+              <q-tooltip class="text-caption">Open in new window</q-tooltip>
+            </q-btn>
           </q-item-section>
         </q-item>
       </q-list>
@@ -53,7 +69,7 @@ const props = defineProps({
   expanded: { type: Boolean, default: true }
 })
 
-const emit = defineEmits(['update:expanded', 'select', 'add'])
+const emit = defineEmits(['update:expanded', 'select', 'add', 'preview', 'open-in-window'])
 
 const expandedModel = computed({
   get: () => props.expanded,

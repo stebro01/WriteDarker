@@ -2,7 +2,8 @@
   <div 
     :class="[
       'border-b border-gray-100 transition-all duration-200',
-      isActive ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'
+      isActive ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50',
+      isInWindow ? 'opacity-60 bg-gray-100 pointer-events-none' : ''
     ]"
     @click="handleFocus"
   >
@@ -27,6 +28,14 @@
         <!-- Document Title -->
         <h3 :class="['font-medium flex items-center', isActive ? 'text-blue-900' : 'text-gray-900']">
           {{ document.label }}
+          <!-- Window indicator -->
+          <span 
+            v-if="isInWindow" 
+            class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full" 
+            title="Document is open in a separate window"
+          >
+            In Window
+          </span>
           <!-- Unsaved changes indicator -->
           <span 
             v-if="hasUnsavedChanges && isEditing" 
@@ -81,6 +90,17 @@
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        
+        <!-- Expand to New Window -->
+        <button
+          @click.stop="$emit('expand-to-window', document.id)"
+          class="p-2 rounded hover:bg-blue-100 text-blue-600 hover:text-blue-800"
+          title="Open in new window"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
         </button>
         
@@ -230,6 +250,10 @@ const props = defineProps({
   isEditing: {
     type: Boolean,
     default: false
+  },
+  isInWindow: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -241,6 +265,7 @@ const emits = defineEmits([
   'delete',
   'toggle-pin',
   'toggle-expand',
+  'expand-to-window',
   'focus'
 ])
 

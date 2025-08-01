@@ -43,12 +43,16 @@
             :references="references"
             @add="$emit('show-reference-search')"
             @select="openReference"
+            @preview="previewReference"
+            @open-in-window="openReferenceInWindow"
           />
           <MediaList
             v-model:expanded="mediaFilesExpanded"
             :media="mediaFiles"
             @select="$emit('edit-media', $event)"
             @delete="deleteMedia"
+            @preview="previewMedia"
+            @open-in-window="openMediaInWindow"
           />
         </q-list>
       </div>
@@ -107,7 +111,9 @@ const emit = defineEmits([
   'toggle-collapse',
   'show-file-action',
   'show-reference-search',
-  'edit-media'
+  'edit-media',
+  'preview-reference',
+  'preview-media'
 ])
 
 // Stores
@@ -127,6 +133,24 @@ function handleAddFilesClick() {
 function openReference(ref) {
   if (!ref?.id) return
   window.open(`${apiStore.baseUrl}/references/${ref.id}/file?token=${userStore.token}`, '_blank')
+}
+
+function previewReference(reference) {
+  emit('preview-reference', reference)
+}
+
+function openReferenceInWindow(reference) {
+  if (!reference?.id) return
+  window.open(`${apiStore.baseUrl}/references/${reference.id}/file?token=${userStore.token}`, '_blank')
+}
+
+function previewMedia(media) {
+  emit('preview-media', media)
+}
+
+function openMediaInWindow(media) {
+  if (!media?.id) return
+  window.open(`${apiStore.baseUrl}/media/${media.id}/file?token=${userStore.token}`, '_blank')
 }
 
 async function deleteMedia(media) {

@@ -67,7 +67,9 @@
             @delete="deleteDocument"
             @toggle-pin="togglePin"
             @toggle-expand="toggleExpand"
+            @expand-to-window="openDocumentInWindow"
             @focus="setActiveDocument"
+            :is-in-window="documentsInWindows.has(document.id)"
           />
         </div>
 
@@ -88,7 +90,9 @@
             @delete="deleteDocument"
             @toggle-pin="togglePin"
             @toggle-expand="toggleExpand"
+            @expand-to-window="openDocumentInWindow"
             @focus="setActiveDocument"
+            :is-in-window="documentsInWindows.has(document.id)"
           />
         </div>
 
@@ -166,6 +170,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useDocumentStore } from '../../../stores/document'
+import { windowManager } from '../../../services/windowManager'
 import BaseButton from '../../ui/BaseButton.vue'
 import DocumentItem from './DocumentItem.vue'
 
@@ -185,6 +190,7 @@ const quickCreateRef = ref(null)
 const showQuickCreate = ref(false)
 const showNewDocumentDialog = ref(false)
 const editingDocumentId = ref(null)
+const documentsInWindows = ref(new Set()) // Track documents opened in new windows
 
 // Form data
 const newDocumentForm = ref({
@@ -301,6 +307,29 @@ function setActiveDocument(documentId) {
   documentStore.setActiveDocument(documentId)
 }
 
+async function openDocumentInWindow(documentId) {
+  const document = documents.value.find(doc => doc.id === documentId)
+  if (!document) {
+    console.error('Document not found:', documentId)
+    return
+  }
+
+  try {
+    // Convert reactive document to plain object
+    const plainDocument = JSON.parse(JSON.stringify(document))
+    const window = windowManager.openDocumentWindow(plainDocument)
+    if (window) {
+      // Track that this document is opened in a window
+      documentsInWindows.value.add(documentId)
+      console.log('Document opened in new window:', document.label)
+    } else {
+      console.error('Failed to open document window')
+    }
+  } catch (error) {
+    console.error('Error opening document in window:', error)
+  }
+}
+
 // Close quick create dropdown when clicking outside
 function handleClickOutside(event) {
   if (quickCreateRef.value && !quickCreateRef.value.contains(event.target)) {
@@ -319,10 +348,31 @@ watch(() => props.projectId, (newProjectId) => {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   loadDocuments()
+  
+  // Set up window manager callbacks
+  windowManager.on('windowClosed', (documentId) => {
+    documentsInWindows.value.delete(documentId)
+    console.log('Document window closed:', documentId)
+  })
+  
+  windowManager.on('documentUpdated', async (documentId, updates) => {
+    // Update document in store when changed from window
+    const result = await documentStore.update(documentId, updates)
+    if (!result.success) {
+      console.error('Failed to update document from window:', result.error)
+    }
+  })
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  
+  // Clean up window manager callbacks
+  windowManager.off('windowClosed')
+  windowManager.off('documentUpdated')
+  
+  // Close all open windows when component unmounts
+  windowManager.closeAllWindows()
 })
 </script>
 

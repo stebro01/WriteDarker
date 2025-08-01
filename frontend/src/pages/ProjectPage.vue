@@ -47,6 +47,8 @@
         @show-file-action="showFileAction = true"
         @show-reference-search="showReferenceSearch = true"
         @edit-media="editMedia"
+        @preview-reference="previewReference"
+        @preview-media="previewMedia"
 
         style="height: calc(100vh - 60px);"
       />
@@ -149,6 +151,18 @@
       @updated="handleProjectUpdated"
       @deleted="handleProjectDeleted"
     />
+
+    <ReferencePreviewDialog
+      :show="showReferencePreview"
+      :reference="selectedReference"
+      @close="showReferencePreview = false"
+    />
+
+    <MediaPreviewDialog
+      :show="showMediaPreview"
+      :media="selectedPreviewMedia"
+      @close="showMediaPreview = false"
+    />
   </div>
 </template>
 
@@ -162,6 +176,8 @@ import FileUpload from '../components/ui/FileUpload.vue'
 import PubMedSearch from '../components/ui/PubMedSearch.vue'
 import ReferenceSearchDialog from '../components/project/ReferenceSearchDialog.vue'
 import MediaEditDialog from '../components/ui/MediaEditDialog.vue'
+import ReferencePreviewDialog from '../components/ui/ReferencePreviewDialog.vue'
+import MediaPreviewDialog from '../components/ui/MediaPreviewDialog.vue'
 import NewProjectDialog from '../components/project/NewProjectDialog.vue'
 import ProjectEditDialog from '../components/project/ProjectEditDialog.vue'
 import LeftSidebar from '../components/project/sidebar/LeftSidebar.vue'
@@ -188,7 +204,11 @@ const showReferenceSearch = ref(false)
 const showMediaEdit = ref(false)
 const showNewProject = ref(false)
 const showProjectEdit = ref(false)
+const showReferencePreview = ref(false)
+const showMediaPreview = ref(false)
 const selectedMedia = ref(null)
+const selectedReference = ref(null)
+const selectedPreviewMedia = ref(null)
 const droppedFiles = ref([])
 
 // Custom splitter state
@@ -504,6 +524,18 @@ async function handleProjectDeleted(deletedProject) {
   console.log('Project deleted:', deletedProject)
   // Navigate back to dashboard
   await router.push('/dashboard')
+}
+
+function previewReference(reference) {
+  if (!reference) return
+  selectedReference.value = reference
+  showReferencePreview.value = true
+}
+
+function previewMedia(media) {
+  if (!media) return
+  selectedPreviewMedia.value = media
+  showMediaPreview.value = true
 }
 </script>
 
