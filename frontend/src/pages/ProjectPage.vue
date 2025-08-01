@@ -202,11 +202,13 @@ import DocumentEditor from '../components/project/editor/DocumentEditor.vue'
 import AiAssistant from '../components/project/chat/AiAssistant.vue'
 import RightSidebar from '../components/project/sidebar/RightSidebar.vue'
 import { useProjectStore } from '../stores/project'
+import { useMediaStore } from '../stores/media'
 
 // Stores and routing
 const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
+const mediaStore = useMediaStore()
 
 // Dialog states
 const showNewProject = ref(false)
@@ -276,7 +278,7 @@ const chatMessages = ref([
 
 // References and media will be loaded by the sidebars themselves
 const references = ref([])
-const mediaFiles = ref([])
+const mediaFiles = computed(() => mediaStore.media)
 
 // Project documents for statistics and search
 const projectDocuments = ref([])
@@ -320,9 +322,12 @@ const autoSaveStatusText = computed(() => {
 
 
 // Event handlers for sidebar events
-function handleMediaUpdated() {
-  // Media updates are now handled by LeftSidebar
-  console.log('Media updated')
+async function handleMediaUpdated() {
+  // Reload media files when updated
+  console.log('Media updated - reloading media list')
+  if (projectId.value) {
+    await loadProjectMedia()
+  }
 }
 
 function handleReferenceAdded() {
@@ -502,10 +507,13 @@ async function loadProjectData() {
       
       // Load project documents for statistics and search
       await loadProjectDocuments()
+      
+      // Load media files for this project
+      await loadProjectMedia()
     } else {
       console.error('Failed to load project:', projectResult.error)
     }
-    // References and media are now loaded by the sidebars themselves
+    // References are now loaded by the sidebars themselves
   } catch (error) {
     console.error('Error loading project data:', error)
   }
@@ -548,6 +556,18 @@ async function loadProjectDocuments() {
     }, 3000)
   } catch (error) {
     console.error('Error loading project documents:', error)
+  }
+}
+
+async function loadProjectMedia() {
+  if (!projectId.value) return
+  
+  try {
+    console.log('Loading media for project:', projectId.value)
+    await mediaStore.fetch(projectId.value)
+    console.log('Loaded media files:', mediaStore.media.length)
+  } catch (error) {
+    console.error('Error loading project media:', error)
   }
 }
 

@@ -1,41 +1,52 @@
 <template>
-  <q-expansion-item
-    v-model="expandedModel"
-    dense
-    expand-separator
-    class="text-grey-7"
-    style="min-height: 50px;"
-  >
+  <div style="width: 100%; max-width: 100%; overflow: hidden; box-sizing: border-box;">
+    <q-expansion-item
+      v-model="expandedModel"
+      dense
+      expand-separator
+      class="text-grey-7"
+      style="min-height: 50px; width: 100%; max-width: 100%; overflow: hidden; box-sizing: border-box; flex-shrink: 1; min-width: 0;"
+    >
     <template #header>
       <q-item-section class="text-caption text-weight-medium text-uppercase" style="letter-spacing: 0.05em;">
         Media Files ({{ media.length }})
       </q-item-section>
     </template>
 
-    <div class="q-pa-none" style="max-height: 128px; overflow-y: auto;">
-      <q-list dense class="q-pa-none">
+    <div class="q-pa-none" style="max-height: 128px; overflow-y: auto; overflow-x: hidden; width: 100%; box-sizing: border-box;">
+      <q-list dense class="q-pa-none" style="width: 100%; box-sizing: border-box;">
         <q-item
           v-for="item in media"
           :key="item.id"
           dense
           class="q-pa-xs rounded hover:bg-grey-2"
+          style="min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box;"
         >
-          <q-item-section avatar class="min-width-auto q-pr-xs">
+          <q-item-section avatar class="min-width-auto q-pr-xs" style="flex: 0 0 auto;">
             <q-icon name="image" size="14px" color="blue-5" />
           </q-item-section>
           <q-item-section 
             clickable
             class="cursor-pointer"
+            style="flex: 1 1 0; min-width: 0;"
             @click="emit('preview', item)"
           >
-            <q-item-label class="text-caption text-weight-medium text-grey-9" lines="1">
+            <q-item-label 
+              class="text-caption text-weight-medium text-grey-9" 
+              lines="1"
+              style="word-break: break-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+            >
               {{ item.filename || item.label }}
             </q-item-label>
-            <q-item-label caption class="text-grey-6">
+            <q-item-label 
+              caption 
+              class="text-grey-6"
+              style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+            >
               {{ item.filetype || 'Unknown' }} • {{ formatFileSize(item.filesize) }}
             </q-item-label>
           </q-item-section>
-          <q-item-section side class="min-width-auto flex items-center">
+          <q-item-section side class="min-width-auto flex items-center" style="flex: 0 0 auto;">
             <q-btn
               flat
               round
@@ -63,7 +74,8 @@
         </q-item>
       </q-list>
     </div>
-  </q-expansion-item>
+    </q-expansion-item>
+  </div>
 </template>
 
 <script setup>

@@ -1,9 +1,10 @@
 <template>
   <div 
     :class="[
-      'bg-white border-r border-gray-200 flex flex-col transition-all duration-300',
+      'bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden',
       props.collapsed ? 'w-12' : 'w-80 sm:w-72 lg:w-80'
     ]"
+    :style="props.collapsed ? 'max-width: 3rem;' : 'max-width: 20rem;'"
   >
     <!-- Sidebar header -->
     <div class="p-3 border-b border-gray-200 flex items-center justify-between">
@@ -19,9 +20,9 @@
     </div>
 
     <!-- Sidebar content -->
-    <div v-if="!props.collapsed" class="column flex-1 overflow-y-auto min-h-0 sidebar-scrollable">
+    <div v-if="!props.collapsed" class="column flex-1 overflow-y-auto overflow-x-hidden min-h-0 sidebar-scrollable" style="width: 100%; max-width: 100%;">
       <!-- Add Files Button -->
-      <div class="col-auto q-pa-sm">
+      <div class="col-auto q-pa-sm" style="width: 100%; max-width: 100%; box-sizing: border-box;">
         <q-btn
           :disable="!props.projectId || props.isNewProject"
           @click="handleAddFilesClick"
@@ -37,8 +38,8 @@
       </div>
 
       <!-- References and Media Files List -->
-      <div class="col">
-        <q-list dense class="q-pa-none">
+      <div class="col" style="width: 100%; max-width: 100%; overflow: hidden;">
+        <q-list dense class="q-pa-none" style="width: 100%; max-width: 100%;">
           <ReferenceList
             v-model:expanded="referencesExpanded"
             :references="props.references"

@@ -49,7 +49,19 @@ export const useDocumentStore = defineStore('document', {
         
         // Update documents for this project
         this.documents = this.documents.filter(doc => doc.project_id !== projectId)
-        this.documents.push(...data)
+        
+        // Filter out media files - only keep text-based documents
+        const textDocuments = data.filter(doc => 
+          !doc.filetype || 
+          (!doc.filetype.includes('image/') && 
+           !doc.filetype.includes('audio/') && 
+           !doc.filetype.includes('video/') &&
+           !doc.filetype.startsWith('image') &&
+           !doc.filetype.startsWith('audio') &&
+           !doc.filetype.startsWith('video'))
+        )
+        
+        this.documents.push(...textDocuments)
         
         return { success: true, data }
       } catch (error) {
