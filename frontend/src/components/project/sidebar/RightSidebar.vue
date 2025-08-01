@@ -49,7 +49,7 @@
                     size="xs"
                     color="blue-7"
                     icon="edit"
-                    @click="$emit('edit-project')"
+                    @click="showProjectEdit = true"
                     class="q-ml-sm"
                   >
                     <q-tooltip class="text-caption">Edit Project</q-tooltip>
@@ -245,12 +245,22 @@
         />
       </div>
     </template>
+
+    <!-- Dialogs -->
+    <ProjectEditDialog
+      :show="showProjectEdit"
+      :project="currentProject"
+      @close="showProjectEdit = false"
+      @updated="handleProjectUpdated"
+      @deleted="handleProjectDeleted"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useDocumentStore } from '../../../stores/document'
+import ProjectEditDialog from '../ProjectEditDialog.vue'
 
 // Props
 const props = defineProps({
@@ -276,9 +286,10 @@ const props = defineProps({
 const documentStore = useDocumentStore()
 
 // Emits
-defineEmits([
+const emit = defineEmits([
   'toggle-collapse',
-  'edit-project'
+  'project-updated',
+  'project-deleted'
 ])
 
 // Local state
@@ -286,6 +297,7 @@ const projectInfoExpanded = ref(true)
 const documentStatsExpanded = ref(true)
 const writingToolsExpanded = ref(true)
 const exportOptionsExpanded = ref(true)
+const showProjectEdit = ref(false)
 
 // Computed properties
 const documentStats = computed(() => {
@@ -322,6 +334,17 @@ onMounted(() => {
     documentStore.fetchByProject(props.projectId)
   }
 })
+
+// Project handling methods
+async function handleProjectUpdated(updatedProject) {
+  console.log('Project updated:', updatedProject)
+  emit('project-updated', updatedProject)
+}
+
+async function handleProjectDeleted(deletedProject) {
+  console.log('Project deleted:', deletedProject)
+  emit('project-deleted', deletedProject)
+}
 
 watch(() => props.projectId, (newProjectId) => {
   if (newProjectId) {

@@ -41,15 +41,11 @@
         :collapsed="leftSidebarCollapsed"
         :project-id="projectId"
         :is-new-project="isNewProject"
-                :references="references"
+        :references="references"
         :media-files="mediaFiles"
         @toggle-collapse="leftSidebarCollapsed = !leftSidebarCollapsed"
-        @show-file-action="showFileAction = true"
-        @show-reference-search="showReferenceSearch = true"
-        @edit-media="editMedia"
-        @preview-reference="previewReference"
-        @preview-media="previewMedia"
-
+        @media-updated="handleMediaUpdated"
+        @reference-added="handleReferenceAdded"
         style="height: calc(100vh - 60px);"
       />
 
@@ -90,78 +86,17 @@
         :is-new-project="isNewProject"
         :project-id="projectId"
         @toggle-collapse="rightSidebarCollapsed = !rightSidebarCollapsed"
-        @edit-project="showProjectEdit = true"
+        @project-updated="handleProjectUpdated"
+        @project-deleted="handleProjectDeleted"
         style="height: calc(100vh - 60px);"
       />
     </div>
 
     <!-- Dialogs -->
-    <FileActionDialog
-      :show="showFileAction"
-      @close="showFileAction = false"
-      @upload-pdf="handleUploadPdf"
-      @search-pubmed="handleSearchPubMed"
-      @upload-media="handleUploadMedia"
-    />
-
-    <FileUpload
-      :show="showPdfUpload"
-      accept=".pdf"
-      @close="showPdfUpload = false"
-      @files-selected="uploadPdfFiles"
-    />
-
-    <FileUpload
-      :show="showMediaUpload"
-      accept="image/*,audio/*,video/*"
-      @close="showMediaUpload = false"
-      @files-selected="uploadMediaFiles"
-    />
-
-    <PubMedSearch
-      :show="showPubMedSearch"
-      @close="showPubMedSearch = false"
-    />
-
-    <ReferenceSearchDialog
-      v-if="projectId"
-      :show="showReferenceSearch"
-      :project-id="projectId"
-      @close="showReferenceSearch = false"
-      @added="handleReferenceAdded"
-    />
-
-    <MediaEditDialog
-      :show="showMediaEdit"
-      :media="selectedMedia"
-      @close="showMediaEdit = false"
-      @updated="handleMediaUpdated"
-    />
-
     <NewProjectDialog
       :show="showNewProject"
       @close="handleNewProjectClose"
       @created="handleProjectCreated"
-    />
-
-    <ProjectEditDialog
-      :show="showProjectEdit"
-      :project="currentProject"
-      @close="showProjectEdit = false"
-      @updated="handleProjectUpdated"
-      @deleted="handleProjectDeleted"
-    />
-
-    <ReferencePreviewDialog
-      :show="showReferencePreview"
-      :reference="selectedReference"
-      @close="showReferencePreview = false"
-    />
-
-    <MediaPreviewDialog
-      :show="showMediaPreview"
-      :media="selectedPreviewMedia"
-      @close="showMediaPreview = false"
     />
   </div>
 </template>
@@ -171,45 +106,20 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '../components/ui/BaseButton.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
-import FileActionDialog from '../components/project/FileActionDialog.vue'
-import FileUpload from '../components/ui/FileUpload.vue'
-import PubMedSearch from '../components/ui/PubMedSearch.vue'
-import ReferenceSearchDialog from '../components/project/ReferenceSearchDialog.vue'
-import MediaEditDialog from '../components/ui/MediaEditDialog.vue'
-import ReferencePreviewDialog from '../components/ui/ReferencePreviewDialog.vue'
-import MediaPreviewDialog from '../components/ui/MediaPreviewDialog.vue'
 import NewProjectDialog from '../components/project/NewProjectDialog.vue'
-import ProjectEditDialog from '../components/project/ProjectEditDialog.vue'
 import LeftSidebar from '../components/project/sidebar/LeftSidebar.vue'
 import DocumentEditor from '../components/project/editor/DocumentEditor.vue'
 import AiAssistant from '../components/project/chat/AiAssistant.vue'
 import RightSidebar from '../components/project/sidebar/RightSidebar.vue'
-import { useReferenceStore } from '../stores/reference'
-import { useMediaStore } from '../stores/media'
 import { useProjectStore } from '../stores/project'
 
 // Stores and routing
 const route = useRoute()
 const router = useRouter()
-const referenceStore = useReferenceStore()
-const mediaStore = useMediaStore()
 const projectStore = useProjectStore()
 
 // Dialog states
-const showFileAction = ref(false)
-const showPdfUpload = ref(false)
-const showMediaUpload = ref(false)
-const showPubMedSearch = ref(false)
-const showReferenceSearch = ref(false)
-const showMediaEdit = ref(false)
 const showNewProject = ref(false)
-const showProjectEdit = ref(false)
-const showReferencePreview = ref(false)
-const showMediaPreview = ref(false)
-const selectedMedia = ref(null)
-const selectedReference = ref(null)
-const selectedPreviewMedia = ref(null)
-const droppedFiles = ref([])
 
 // Custom splitter state
 const aiPanelHeight = ref(300) // Default height in pixels when expanded
@@ -265,8 +175,9 @@ const chatMessages = ref([
   }
 ])
 
-const references = computed(() => referenceStore.references)
-const mediaFiles = computed(() => mediaStore.media)
+// References and media will be loaded by the sidebars themselves
+const references = ref([])
+const mediaFiles = ref([])
 
 // Layout computed properties
 const documentContainerClasses = computed(() => {
@@ -288,111 +199,15 @@ const aiContainerStyle = computed(() => {
   }
 })
 
-// File handling - shared between components
-
-// Note: Drag and drop functionality removed in favor of button-based file selection
-
-async function handleUploadPdf() {
-  if (droppedFiles.value.length) {
-    await uploadPdfFiles(droppedFiles.value)
-    droppedFiles.value = []
-    showFileAction.value = false
-  } else {
-    showFileAction.value = false
-    showPdfUpload.value = true
-  }
+// Event handlers for sidebar events
+function handleMediaUpdated() {
+  // Media updates are now handled by LeftSidebar
+  console.log('Media updated')
 }
 
-async function uploadPdfFiles(files) {
-  for (const file of files) {
-    await referenceStore.upload({
-      projectIds: projectId.value ? [projectId.value] : [],
-      query: file.name,
-      file
-    })
-  }
-}
-
-function handleSearchPubMed() {
-  showFileAction.value = false
-  showPubMedSearch.value = true
-}
-
-async function handleUploadMedia() {
-  if (droppedFiles.value.length) {
-    await uploadMediaFiles(droppedFiles.value)
-    droppedFiles.value = []
-    showFileAction.value = false
-  } else {
-    showFileAction.value = false
-    showMediaUpload.value = true
-  }
-}
-
-async function uploadMediaFiles(files) {
-  if (!projectId.value) {
-    if (isNewProject.value) {
-      console.error('Cannot upload media files to a new project. Please save the project first.')
-      // TODO: Show user-friendly notification that project needs to be saved first
-      alert('Please save your project before uploading media files.')
-      return
-    } else {
-      console.error('No project ID available for media upload')
-      return
-    }
-  }
-  
-  console.log('Starting media upload for', files.length, 'files')
-  
-  let successCount = 0
-  let errorCount = 0
-  
-  for (const file of files) {
-    console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size)
-    try {
-      const result = await mediaStore.upload({ 
-        projectId: projectId.value, 
-        file, 
-        label: file.name 
-      })
-      
-      if (result.success) {
-        console.log('Upload successful for:', file.name)
-        successCount++
-      } else {
-        console.error('Upload failed for:', file.name, 'Error:', result.error)
-        errorCount++
-      }
-    } catch (error) {
-      console.error('Upload error for:', file.name, error)
-      errorCount++
-    }
-  }
-  
-  // Show summary
-  console.log(`Upload complete: ${successCount} successful, ${errorCount} failed`)
-  
-  // Refresh the media list after upload
-  if (projectId.value && successCount > 0) {
-    try {
-      await mediaStore.fetch(projectId.value)
-      console.log('Media list refreshed')
-    } catch (error) {
-      console.error('Failed to refresh media list:', error)
-    }
-  }
-}
-
-function editMedia(media) {
-  if (!media) return
-  selectedMedia.value = media
-  showMediaEdit.value = true
-}
-
-async function handleMediaUpdated() {
-  if (projectId.value) {
-    await mediaStore.fetch(projectId.value)
-  }
+function handleReferenceAdded() {
+  // Reference additions are now handled by LeftSidebar
+  console.log('Reference added')
 }
 
 // Custom splitter methods
@@ -466,12 +281,7 @@ async function loadProjectData() {
     } else {
       console.error('Failed to load project:', projectResult.error)
     }
-
-    // Load references and media in parallel
-    await Promise.all([
-      referenceStore.fetchAll(projectId.value),
-      mediaStore.fetch(projectId.value)
-    ])
+    // References and media are now loaded by the sidebars themselves
   } catch (error) {
     console.error('Error loading project data:', error)
   }
@@ -492,11 +302,7 @@ watch(() => projectId.value, async (newProjectId, oldProjectId) => {
   }
 })
 
-async function handleReferenceAdded() {
-  if (projectId.value) {
-    await referenceStore.fetchAll(projectId.value)
-  }
-}
+
 
 function handleNewProjectClose() {
   showNewProject.value = false
@@ -524,18 +330,6 @@ async function handleProjectDeleted(deletedProject) {
   console.log('Project deleted:', deletedProject)
   // Navigate back to dashboard
   await router.push('/dashboard')
-}
-
-function previewReference(reference) {
-  if (!reference) return
-  selectedReference.value = reference
-  showReferencePreview.value = true
-}
-
-function previewMedia(media) {
-  if (!media) return
-  selectedPreviewMedia.value = media
-  showMediaPreview.value = true
 }
 </script>
 
