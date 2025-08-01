@@ -28,10 +28,11 @@
           outline
           color="orange-6"
           size="sm"
-          class="full-width q-py-sm"
-          icon="add"
+          class="full-width q-py-sm flex items-center justify-center"
         >
-          <span class="q-ml-xs">{{ (!props.projectId || props.isNewProject) ? 'Save project first' : 'Add Files' }}</span>
+          <span class="q-mr-xs">{{ (!props.projectId || props.isNewProject) ? 'Save project first' : '+ add' }}</span>
+          <q-icon name="description" size="16px" class="q-mx-xs" />
+          <q-icon name="image" size="16px" class="q-mx-xs" />
         </q-btn>
       </div>
 
@@ -41,7 +42,6 @@
           <ReferenceList
             v-model:expanded="referencesExpanded"
             :references="props.references"
-            @add="handleAddReference"
             @select="openReference"
             @preview="previewReference"
             @open-in-window="openReferenceInWindow"
@@ -92,20 +92,13 @@
       @close="showReferencePreview = false"
     />
 
-    <ReferenceSearchDialog
-      v-if="props.projectId"
-      :show="showReferenceSearch"
-      :project-id="props.projectId"
-      @close="showReferenceSearch = false"
-      @added="handleReferenceAdded"
-    />
-
     <FileActionDialog
       :show="showFileAction"
       @close="showFileAction = false"
       @upload-pdf="handleUploadPdf"
       @search-pubmed="handleSearchPubMed"
       @upload-media="handleUploadMedia"
+      @add-reference="linkReferenceToProject"
     />
 
     <FileUpload
@@ -125,6 +118,7 @@
     <PubMedSearch
       :show="showPubMedSearch"
       @close="showPubMedSearch = false"
+      @import-success="handlePubMedImport"
     />
   </div>
 </template>
@@ -136,7 +130,6 @@ import MediaList from '../MediaList.vue'
 import MediaPreviewDialog from '../../ui/MediaPreviewDialog.vue'
 import MediaEditDialog from '../../ui/MediaEditDialog.vue'
 import ReferencePreviewDialog from '../../ui/ReferencePreviewDialog.vue'
-import ReferenceSearchDialog from '../ReferenceSearchDialog.vue'
 import FileActionDialog from '../FileActionDialog.vue'
 import FileUpload from '../../ui/FileUpload.vue'
 import PubMedSearch from '../../ui/PubMedSearch.vue'
@@ -191,7 +184,6 @@ const showFileAction = ref(false)
 const showPdfUpload = ref(false)
 const showMediaUpload = ref(false)
 const showPubMedSearch = ref(false)
-const showReferenceSearch = ref(false)
 const showMediaEdit = ref(false)
 const showReferencePreview = ref(false)
 const showMediaPreview = ref(false)
@@ -238,10 +230,6 @@ function editMedia(media) {
   showMediaEdit.value = true
 }
 
-function handleAddReference() {
-  showReferenceSearch.value = true
-}
-
 // File handling methods
 async function handleUploadPdf() {
   if (droppedFiles.value.length) {
@@ -261,6 +249,10 @@ async function uploadPdfFiles(files) {
       query: file.name,
       file
     })
+  }
+  if (props.projectId) {
+    await referenceStore.fetchAll(props.projectId)
+    emit('reference-added')
   }
 }
 
@@ -340,11 +332,31 @@ async function handleMediaUpdated() {
   emit('media-updated')
 }
 
-async function handleReferenceAdded() {
-  if (props.projectId) {
+async function linkReferenceToProject(reference) {
+  if (!props.projectId || !reference?.id) return
+  try {
+    await apiStore.post(`/references/${reference.id}/projects/${props.projectId}?token=${userStore.token}`)
     await referenceStore.fetchAll(props.projectId)
+    emit('reference-added')
+  } catch (error) {
+    console.error('Failed to link reference:', error)
+    alert('Failed to link reference to project.')
+  } finally {
+    showFileAction.value = false
   }
-  emit('reference-added')
+}
+
+async function handlePubMedImport(article) {
+  if (!props.projectId) return
+  try {
+    await referenceStore.fetchAll()
+    const ref = referenceStore.references.find(r => r.pubmed_id === article.pubmed_id)
+    if (ref) {
+      await linkReferenceToProject(ref)
+    }
+  } catch (error) {
+    console.error('Failed to link imported reference:', error)
+  }
 }
 
 async function deleteMedia(media) {
