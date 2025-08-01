@@ -21,9 +21,15 @@ def _ref_to_dict(ref: models.Reference) -> dict:
         "filename": ref.filename,
         "filetype": ref.filetype,
         "file_hash": ref.file_hash,
+        # PubMed fields
+        "pubmed_id": ref.pubmed_id,
+        "doi": ref.doi,
+        "abstract": ref.abstract,
+        "keywords": ref.keywords,
+        "publication_date": ref.publication_date,
+        "url": ref.url,
+        "citation": ref.citation,
     }
-    if ref.pubmed_id:
-        data["pubmed_id"] = ref.pubmed_id
     return data
 
 router = APIRouter()

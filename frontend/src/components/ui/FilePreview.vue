@@ -100,6 +100,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useUserStore } from '../../stores/user'
+import { useApiStore } from '../../stores/api'
+
+const apiStore = useApiStore()
 
 const props = defineProps({
   show: {
@@ -196,7 +199,7 @@ const loadFileContent = async () => {
   
   try {
     // Fetch the file content from the API
-    const response = await fetch(`http://localhost:8000/references/${props.reference.id}/file?token=${userStore.token}`)
+    const response = await fetch(`${apiStore.baseUrl}/references/${props.reference.id}/file?token=${userStore.token}`)
     
     if (!response.ok) {
       throw new Error(`Failed to load file: ${response.statusText}`)

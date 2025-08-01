@@ -34,16 +34,21 @@ Base = declarative_base()
 # Lightweight auto-migration helpers (only for SQLite dev database)
 # ---------------------------------------------------------------------------
 
-def _ensure_columns_exist():
-    """For simple development setups make sure new columns exist.
+def _ensure_tables_and_columns_exist():
+    """For simple development setups make sure tables and columns exist.
 
     This avoids having to reset the database every time a model changes.
     It is *not* a replacement for proper Alembic migrations, but good
     enough during rapid prototyping.
     """
+    from sqlalchemy import text, inspect
 
-    from sqlalchemy import text
+    # First ensure all tables exist
+    inspector = inspect(engine)
+    Base.metadata.create_all(bind=engine)
+    print("[DB] Created any missing tables")
 
+    # Then add any missing columns
     required = {
         "references": {
             "pdf": "BLOB",  
@@ -62,19 +67,28 @@ def _ensure_columns_exist():
 
     with engine.connect() as conn:
         for table, cols in required.items():
+            # Skip if table doesn't exist (shouldn't happen after create_all)
+            if not inspector.has_table(table):
+                print(f"[DB] Warning: Table '{table}' does not exist")
+                continue
+
             existing = {
                 row[1] for row in conn.execute(text(f"PRAGMA table_info('{table}')"))
             }
             for col, sqltype in cols.items():
                 if col not in existing:
-                    conn.execute(text(f"ALTER TABLE \"{table}\" ADD COLUMN \"{col}\" {sqltype}"))
-                    print(f"[DB] Added missing column '{col}' to '{table}' table")
+                    try:
+                        conn.execute(text(f"ALTER TABLE \"{table}\" ADD COLUMN \"{col}\" {sqltype}"))
+                        print(f"[DB] Added missing column '{col}' to '{table}' table")
+                    except Exception as e:
+                        print(f"[DB] Warning: Failed to add column '{col}' to '{table}': {str(e)}")
 
 # Run auto-migrations as soon as the module is imported (after engine exists)
 try:
-    _ensure_columns_exist()
+    _ensure_tables_and_columns_exist()
 except Exception as exc:
     # Don't crash the app if something goes wrong – just log and continue
     import traceback, sys
     traceback.print_exception(exc, file=sys.stderr)
+    print("[DB] Warning: Database initialization failed. Some features may not work correctly.")
 

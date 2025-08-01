@@ -108,7 +108,10 @@
 import { ref, watch, computed } from 'vue'
 import { useMediaStore } from '../../stores/media'
 import { useUserStore } from '../../stores/user'
+import { useApiStore } from '../../stores/api'
 import BaseButton from './BaseButton.vue'
+
+const apiStore = useApiStore()
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -133,8 +136,7 @@ const isImageFile = computed(() => {
 // Generate image URL for preview
 const imageUrl = computed(() => {
   if (!props.media?.id || !isImageFile.value) return ''
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  return `${apiBaseUrl}/documents/${props.media.id}/file?token=${userStore.token}`
+  return `${apiStore.baseUrl}/documents/${props.media.id}/file?token=${userStore.token}`
 })
 
 watch(() => props.media, (m) => {

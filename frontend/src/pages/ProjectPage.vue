@@ -700,9 +700,12 @@ async function uploadMediaFiles(files) {
   }
 }
 
+import { useApiStore } from '../stores/api'
+const apiStore = useApiStore()
+
 function openReference(ref) {
   if (!ref?.id) return
-  window.open(`http://localhost:8000/references/${ref.id}/file?token=${userStore.token}`, '_blank')
+  window.open(`${apiStore.baseUrl}/references/${ref.id}/file?token=${userStore.token}`, '_blank')
 }
 
 function editMedia(media) {
