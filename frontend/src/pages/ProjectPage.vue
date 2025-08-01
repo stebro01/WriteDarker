@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen bg-gray-50 flex flex-col overflow-hidden">
+  <div class="fit bg-gray-50 column no-wrap overflow-hidden">
     <!-- Header -->
     <PageHeader 
       :title="projectTitle" 
@@ -35,7 +35,7 @@
     </PageHeader>
 
     <!-- Main content area -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="col row no-wrap overflow-hidden">
       <!-- Left Sidebar - References & Files -->
       <LeftSidebar
         :collapsed="leftSidebarCollapsed"
@@ -47,22 +47,28 @@
         @show-file-action="showFileAction = true"
         @show-reference-search="showReferenceSearch = true"
         @edit-media="editMedia"
+
+        style="height: calc(100vh - 60px);"
       />
 
       <!-- Center - Main Document Area -->
-      <div class="flex-1 flex flex-col bg-white min-h-0">
-        <!-- Document editor -->
-        <DocumentEditor
-          :project-id="projectId"
-        />
+      <div class="col column bg-white" style="height: calc(100vh - 60px);">
+        <!-- Document editor with scroll area -->
+        <div class="col column">
+          <DocumentEditor
+            :project-id="projectId"
+          />
+        </div>
 
-        <!-- AI Chat section -->
-        <AiAssistant
-          :collapsed="chatCollapsed"
-          :messages="chatMessages"
-          @toggle-collapse="chatCollapsed = !chatCollapsed"
-          @send-message="sendMessage"
-        />
+        <!-- AI Chat section - fixed height -->
+        <div class="col-auto">
+          <AiAssistant
+            :collapsed="chatCollapsed"
+            :messages="chatMessages"
+            @toggle-collapse="chatCollapsed = !chatCollapsed"
+            @send-message="sendMessage"
+          />
+        </div>
       </div>
 
       <!-- Right Sidebar - Tools & Options -->
@@ -73,6 +79,7 @@
         :project-id="projectId"
         @toggle-collapse="rightSidebarCollapsed = !rightSidebarCollapsed"
         @edit-project="showProjectEdit = true"
+        style="height: calc(100vh - 60px);"
       />
     </div>
 

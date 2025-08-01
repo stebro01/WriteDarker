@@ -1,7 +1,7 @@
 <template>
-  <div class="flex-1 flex flex-col min-h-0 bg-white">
-    <!-- Document Management Header -->
-    <div class="border-b border-gray-200 p-4 flex items-center justify-between">
+  <div class="column full-height bg-white">
+    <!-- Document Management Header - Fixed -->
+    <div class="col-auto border-b border-gray-200 p-4 flex items-center justify-between">
       <h2 class="text-lg font-medium text-gray-900">Documents</h2>
       <div class="flex items-center space-x-2">
         <!-- Quick Create Dropdown -->
@@ -47,61 +47,63 @@
       </div>
     </div>
 
-    <!-- Documents List -->
-    <div class="flex-1 overflow-y-auto">
-      <!-- Pinned Documents -->
-      <div v-if="pinnedDocuments.length > 0" class="border-b border-gray-100">
-        <div class="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Pinned Documents
+    <!-- Documents List - Scrollable -->
+    <div class="col">
+      <q-scroll-area class="full-height">
+        <!-- Pinned Documents -->
+        <div v-if="pinnedDocuments.length > 0" class="border-b border-gray-100">
+          <div class="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Pinned Documents
+          </div>
+          <DocumentItem
+            v-for="document in pinnedDocuments"
+            :key="`pinned-${document.id}`"
+            :document="document"
+            :is-active="activeDocumentId === document.id"
+            :is-editing="editingDocumentId === document.id"
+            @edit="startEditing"
+            @save="saveDocument"
+            @cancel="cancelEditing"
+            @delete="deleteDocument"
+            @toggle-pin="togglePin"
+            @toggle-expand="toggleExpand"
+            @focus="setActiveDocument"
+          />
         </div>
-        <DocumentItem
-          v-for="document in pinnedDocuments"
-          :key="`pinned-${document.id}`"
-          :document="document"
-          :is-active="activeDocumentId === document.id"
-          :is-editing="editingDocumentId === document.id"
-          @edit="startEditing"
-          @save="saveDocument"
-          @cancel="cancelEditing"
-          @delete="deleteDocument"
-          @toggle-pin="togglePin"
-          @toggle-expand="toggleExpand"
-          @focus="setActiveDocument"
-        />
-      </div>
 
-      <!-- Regular Documents -->
-      <div>
-        <div v-if="pinnedDocuments.length > 0" class="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Documents
+        <!-- Regular Documents -->
+        <div>
+          <div v-if="pinnedDocuments.length > 0" class="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Documents
+          </div>
+          <DocumentItem
+            v-for="document in unpinnedDocuments"
+            :key="document.id"
+            :document="document"
+            :is-active="activeDocumentId === document.id"
+            :is-editing="editingDocumentId === document.id"
+            @edit="startEditing"
+            @save="saveDocument"
+            @cancel="cancelEditing"
+            @delete="deleteDocument"
+            @toggle-pin="togglePin"
+            @toggle-expand="toggleExpand"
+            @focus="setActiveDocument"
+          />
         </div>
-        <DocumentItem
-          v-for="document in unpinnedDocuments"
-          :key="document.id"
-          :document="document"
-          :is-active="activeDocumentId === document.id"
-          :is-editing="editingDocumentId === document.id"
-          @edit="startEditing"
-          @save="saveDocument"
-          @cancel="cancelEditing"
-          @delete="deleteDocument"
-          @toggle-pin="togglePin"
-          @toggle-expand="toggleExpand"
-          @focus="setActiveDocument"
-        />
-      </div>
 
-      <!-- Empty State -->
-      <div v-if="documents.length === 0" class="p-8 text-center text-gray-500">
-        <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-        <p class="text-lg font-medium mb-2">No documents yet</p>
-        <p class="mb-4">Get started by creating your first document</p>
-        <BaseButton variant="primary" @click="showNewDocumentDialog = true">
-          Create Document
-        </BaseButton>
-      </div>
+        <!-- Empty State -->
+        <div v-if="documents.length === 0" class="p-8 text-center text-gray-500">
+          <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <p class="text-lg font-medium mb-2">No documents yet</p>
+          <p class="mb-4">Get started by creating your first document</p>
+          <BaseButton variant="primary" @click="showNewDocumentDialog = true">
+            Create Document
+          </BaseButton>
+        </div>
+      </q-scroll-area>
     </div>
 
     <!-- New Document Dialog -->
