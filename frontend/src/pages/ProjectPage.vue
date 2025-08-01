@@ -53,14 +53,23 @@
 
       <!-- Center - Main Document Area -->
       <div class="col column bg-white" style="height: calc(100vh - 60px);">
+        <q-splitter
+        v-model="splitterModel"
+      horizontal
+      style="height: calc(100vh - 60px);"
+    >
+    
         <!-- Document editor with scroll area -->
+        <template v-slot:before>
         <div class="col column">
           <DocumentEditor
             :project-id="projectId"
           />
         </div>
+        </template>
 
         <!-- AI Chat section - fixed height -->
+        <template v-slot:after>
         <div class="col-auto">
           <AiAssistant
             :collapsed="chatCollapsed"
@@ -69,6 +78,9 @@
             @send-message="sendMessage"
           />
         </div>
+        </template>
+
+      </q-splitter>
       </div>
 
       <!-- Right Sidebar - Tools & Options -->
@@ -180,6 +192,7 @@ const showNewProject = ref(false)
 const showProjectEdit = ref(false)
 const selectedMedia = ref(null)
 const droppedFiles = ref([])
+const splitterModel = ref(80)
 
 const projectId = computed(() => {
   const id = route.params.id
