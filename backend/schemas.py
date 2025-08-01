@@ -82,6 +82,8 @@ class ProjectUpdate(BaseModel):
 
 class ProjectRead(ProjectBase):
     id: int
+    last_accessed: Optional[datetime] = None
+    status: Optional[str] = "active"
 
     class Config:
         from_attributes = True
@@ -92,6 +94,8 @@ class ProjectSummary(ProjectRead):
     word_count: int
     reference_count: int
     media_count: int
+    last_accessed: Optional[datetime] = None
+    status: Optional[str] = "active"
 
     class Config:
         from_attributes = True

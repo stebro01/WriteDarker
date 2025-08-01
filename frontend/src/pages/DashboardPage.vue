@@ -70,7 +70,34 @@
       <div class="mb-6">
         <div class="text-center mb-8">
           <h2 class="text-lg font-medium text-gray-900 mb-2">Welcome back, {{ userStore.userDisplayName }}!</h2>
-          <p class="text-gray-600">Ready to continue your writing journey?</p>
+          <p class="text-gray-600 mb-4">Ready to continue your writing journey?</p>
+          
+          <!-- Recent Project Button -->
+          <BaseButton 
+            v-if="projectStore.recentProject"
+            @click="openRecentProject"
+            variant="primary" 
+            size="md"
+            class="hover:shadow-lg transition-all duration-300"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Continue with "{{ projectStore.recentProject.label }}"
+          </BaseButton>
+          
+          <BaseButton 
+            v-else
+            @click="navigateToProject('new')"
+            variant="primary" 
+            size="md"
+            class="hover:shadow-lg transition-all duration-300"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Create Your First Project
+          </BaseButton>
         </div>
       </div>
 
@@ -133,6 +160,9 @@
                   <span class="text-base font-semibold text-blue-600">{{ totalProjects }}</span>
                 </div>
                 <div class="text-xs text-gray-500 space-y-1">
+                  <div class="flex justify-between mb-2">
+                    <span class="font-medium text-gray-700">By Progress:</span>
+                  </div>
                   <div v-if="completedProjects > 0" class="flex justify-between">
                     <span>Completed:</span>
                     <span class="font-medium text-green-600">{{ completedProjects }}</span>
@@ -144,6 +174,22 @@
                   <div v-if="emptyProjects > 0" class="flex justify-between">
                     <span>Empty:</span>
                     <span class="font-medium text-gray-600">{{ emptyProjects }}</span>
+                  </div>
+                  
+                  <div class="flex justify-between mt-3 mb-2">
+                    <span class="font-medium text-gray-700">By Status:</span>
+                  </div>
+                  <div v-if="activeProjects > 0" class="flex justify-between">
+                    <span>Active:</span>
+                    <span class="font-medium text-blue-600">{{ activeProjects }}</span>
+                  </div>
+                  <div v-if="waitingProjects > 0" class="flex justify-between">
+                    <span>Waiting:</span>
+                    <span class="font-medium text-yellow-600">{{ waitingProjects }}</span>
+                  </div>
+                  <div v-if="finishedProjects > 0" class="flex justify-between">
+                    <span>Finished:</span>
+                    <span class="font-medium text-green-600">{{ finishedProjects }}</span>
                   </div>
                 </div>
               </div>
@@ -294,6 +340,17 @@ const completedProjects = computed(() =>
   projectStore.projects.filter(project => project.word_count >= 1000).length
 )
 
+// Project status computed properties
+const activeProjects = computed(() => 
+  projectStore.projects.filter(project => project.status === 'active').length
+)
+const waitingProjects = computed(() => 
+  projectStore.projects.filter(project => project.status === 'waiting').length
+)
+const finishedProjects = computed(() => 
+  projectStore.projects.filter(project => project.status === 'finished').length
+)
+
 // Handle logout
 const handleLogout = async () => {
   try {
@@ -314,6 +371,13 @@ const navigateToProject = (type) => {
   } else if (type === 'existing') {
     // Navigate to projects list page
     router.push('/projects')
+  }
+}
+
+// Open recent project
+const openRecentProject = () => {
+  if (projectStore.recentProject) {
+    router.push(`/project/${projectStore.recentProject.id}`)
   }
 }
 
@@ -344,6 +408,7 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   referenceStore.fetchAll()
   projectStore.fetchAll()
+  projectStore.fetchRecentProject()
 })
 
 onUnmounted(() => {

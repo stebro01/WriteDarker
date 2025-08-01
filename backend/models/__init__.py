@@ -92,6 +92,8 @@ class Project(Base):
     description = Column(String)
     author_id = Column(Integer, ForeignKey("users.id"))
     coauthors = Column(String)
+    last_accessed = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="active")  # active, waiting, finished
 
     author = relationship("User")
     documents = relationship("Document", back_populates="project")

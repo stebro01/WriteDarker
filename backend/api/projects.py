@@ -1,6 +1,7 @@
 """API endpoints for project CRUD operations."""
 
 from typing import List
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -33,9 +34,21 @@ def list_projects(token: str, db: Session = Depends(get_db)):
                 word_count=word_count,
                 reference_count=reference_count,
                 media_count=media_count,
+                last_accessed=proj.last_accessed,
+                status=proj.status,
             )
         )
     return summaries
+
+
+@router.get("/recent", response_model=schemas.ProjectRead)
+def get_recent_project(token: str, db: Session = Depends(get_db)):
+    """Return the most recently accessed project for the current user."""
+    user = get_current_user(token, db)
+    proj = db.query(models.Project).filter(models.Project.author_id == user.id).order_by(models.Project.last_accessed.desc()).first()
+    if not proj:
+        raise HTTPException(status_code=404, detail="No projects found")
+    return proj
 
 
 @router.post("/", response_model=schemas.ProjectRead)
@@ -61,6 +74,12 @@ def read_project(project_id: int, token: str, db: Session = Depends(get_db)):
     proj = db.query(models.Project).filter(models.Project.id == project_id, models.Project.author_id == user.id).first()
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Update last accessed time
+    proj.last_accessed = datetime.utcnow()
+    db.commit()
+    db.refresh(proj)
+    
     return proj
 
 

@@ -6,6 +6,7 @@ export const useProjectStore = defineStore('project', {
   state: () => ({
     projects: [],
     loading: false,
+    recentProject: null,
   }),
   actions: {
     async fetchAll() {
@@ -115,6 +116,25 @@ export const useProjectStore = defineStore('project', {
         return { success: true }
       } catch (error) {
         const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete project'
+        return { success: false, error: errorMessage }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchRecentProject() {
+      const userStore = useUserStore()
+      if (!userStore.token) return { success: false, error: 'Not authenticated' }
+      
+      const apiStore = useApiStore()
+      this.loading = true
+      try {
+        const query = new URLSearchParams({ token: userStore.token }).toString()
+        const data = await apiStore.get(`/projects/recent?${query}`, userStore.token)
+        this.recentProject = data
+        return { success: true, data }
+      } catch (error) {
+        const errorMessage = error.response?.data?.detail || error.message || 'Failed to load recent project'
         return { success: false, error: errorMessage }
       } finally {
         this.loading = false
