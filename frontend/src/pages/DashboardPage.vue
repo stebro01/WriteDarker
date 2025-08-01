@@ -150,18 +150,6 @@
               
               <div class="space-y-2">
                 <BaseButton 
-                  @click="navigateToProject('new')"
-                  variant="primary" 
-                  size="sm" 
-                  full-width
-                  class="group-hover:shadow-md transition-shadow"
-                >
-                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                  New Project
-                </BaseButton>
-                <BaseButton 
                   @click="navigateToProject('existing')"
                   variant="outline" 
                   size="sm" 
@@ -169,6 +157,19 @@
                 >
                   View All Projects
                 </BaseButton>
+                <BaseButton 
+                  @click="navigateToProject('new')"
+                  variant="primary" 
+                  size="sm" 
+                  full-width
+                  class="group-hover:shadow-md transition-shadow q-mt-xs"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  New Project
+                </BaseButton>
+
               </div>
             </div>
           </div>
@@ -206,7 +207,7 @@
                   </svg>
                   Upload References
                 </BaseButton>
-                <BaseButton variant="outline" size="sm" full-width @click="router.push('/library')">
+                <BaseButton class="q-mt-xs" variant="outline" size="sm" full-width @click="router.push('/library')">
                   Browse Library
                 </BaseButton>
               </div>
