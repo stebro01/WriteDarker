@@ -63,9 +63,22 @@
       <div class="col column bg-white" style="height: calc(100vh - 60px);">
         <!-- Flexible Layout Container -->
         <div class="column" style="height: calc(100vh - 60px);">
-          <!-- Document Editor - Always visible -->
-          <div :class="documentContainerClasses">
+          <!-- Document Editor - Only visible when we have a valid project -->
+          <div v-if="projectId" :class="documentContainerClasses">
             <DocumentEditor :project-id="projectId" />
+          </div>
+          
+          <!-- New Project Placeholder - Show when creating new project -->
+          <div v-else-if="isNewProject" class="flex items-center justify-center h-full bg-gray-50">
+            <div class="text-center">
+              <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+              </div>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">Create a New Project</h3>
+              <p class="text-gray-600 mb-4">Fill in the project details in the dialog to get started</p>
+            </div>
           </div>
           
           <!-- Splitter Handle - Only when AI is expanded -->
