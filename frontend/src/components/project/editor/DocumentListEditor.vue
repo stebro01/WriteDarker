@@ -258,10 +258,12 @@ function startEditing(documentId) {
   documentStore.setActiveDocument(documentId)
 }
 
-async function saveDocument(documentId, updates) {
+async function saveDocument(documentId, updates, cancelEditing = true) {
   const result = await documentStore.update(documentId, updates)
   if (result.success) {
-    editingDocumentId.value = null
+    if (cancelEditing) {
+      editingDocumentId.value = null
+    }
   } else {
     console.error('Failed to save document:', result.error)
     // TODO: Show user-friendly error notification

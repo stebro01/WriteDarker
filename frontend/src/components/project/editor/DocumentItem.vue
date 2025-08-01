@@ -292,12 +292,15 @@ function toggleExpanded() {
   emits('toggle-expand', props.document.id)
 }
 
-function saveChanges() {
+function saveChanges(cancelEditing = true) {
   clearAutoSave()
   emits('save', props.document.id, {
     label: editForm.value.label,
     text: editForm.value.text
-  })
+  }, cancelEditing)
+  if (cancelEditing) {
+    emits('cancel')
+  }
 }
 
 function cancelChanges() {
@@ -370,7 +373,7 @@ function scheduleAutoSave() {
   
   autoSaveTimeout.value = setTimeout(() => {
     if (hasUnsavedChanges.value && props.isEditing) {
-      saveChanges()
+      saveChanges(false)
     }
   }, 3000) // Auto-save after 3 seconds of inactivity
 }
