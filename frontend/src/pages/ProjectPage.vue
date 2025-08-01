@@ -847,6 +847,7 @@ function handleNewProjectClose() {
 async function handleProjectCreated(project) {
   console.log('Project created:', project)
   // Navigate to the new project page
+  showNewProject.value = false
   await router.push(`/project/${project.id}`)
 }
 

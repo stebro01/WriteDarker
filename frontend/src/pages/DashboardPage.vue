@@ -129,10 +129,23 @@
             <div class="space-y-3">
               <div class="bg-blue-50/50 rounded-lg p-3">
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm font-medium text-gray-700">Active Projects</span>
-                  <span class="text-base font-semibold text-blue-600">3</span>
+                  <span class="text-sm font-medium text-gray-700">Total Projects</span>
+                  <span class="text-base font-semibold text-blue-600">{{ totalProjects }}</span>
                 </div>
-                <div class="text-xs text-gray-500">2 in progress, 1 completed</div>
+                <div class="text-xs text-gray-500 space-y-1">
+                  <div v-if="completedProjects > 0" class="flex justify-between">
+                    <span>Completed:</span>
+                    <span class="font-medium text-green-600">{{ completedProjects }}</span>
+                  </div>
+                  <div v-if="inProgressProjects > 0" class="flex justify-between">
+                    <span>In Progress:</span>
+                    <span class="font-medium text-orange-600">{{ inProgressProjects }}</span>
+                  </div>
+                  <div v-if="emptyProjects > 0" class="flex justify-between">
+                    <span>Empty:</span>
+                    <span class="font-medium text-gray-600">{{ emptyProjects }}</span>
+                  </div>
+                </div>
               </div>
               
               <div class="space-y-2">
@@ -250,6 +263,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { useReferenceStore } from '../stores/reference'
+import { useProjectStore } from '../stores/project'
 import BaseCard from '../components/ui/BaseCard.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
 import FileUpload from '../components/ui/FileUpload.vue'
@@ -257,12 +271,27 @@ import FileUpload from '../components/ui/FileUpload.vue'
 const router = useRouter()
 const userStore = useUserStore()
 const referenceStore = useReferenceStore()
+const projectStore = useProjectStore()
 
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)
 const showUpload = ref(false)
 const pdfCount = computed(() => referenceStore.pdfCount)
 const articleCount = computed(() => referenceStore.referenceCount)
+
+// Project statistics computed properties
+const totalProjects = computed(() => projectStore.projects.length)
+const emptyProjects = computed(() => 
+  projectStore.projects.filter(project => project.document_count === 0).length
+)
+const inProgressProjects = computed(() => 
+  projectStore.projects.filter(project => 
+    project.document_count > 0 && project.word_count > 0 && project.word_count < 1000
+  ).length
+)
+const completedProjects = computed(() => 
+  projectStore.projects.filter(project => project.word_count >= 1000).length
+)
 
 // Handle logout
 const handleLogout = async () => {
@@ -313,6 +342,7 @@ const handleClickOutside = (event) => {
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   referenceStore.fetchAll()
+  projectStore.fetchAll()
 })
 
 onUnmounted(() => {
