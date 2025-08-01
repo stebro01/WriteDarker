@@ -7,29 +7,39 @@
       back-route="/dashboard"
     >
       <template #actions>
-        <BaseButton variant="outline" size="sm" class="hidden sm:flex">
+        <!-- Search -->
+        <BaseButton variant="ghost" size="sm" @click="toggleSearch" :disabled="!currentProject">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
-          Export
+          Search
         </BaseButton>
-        <!-- Mobile export button -->
-        <BaseButton variant="outline" size="sm" class="flex sm:hidden p-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+
+        <!-- Auto-save Indicator -->
+        <BaseButton 
+          variant="ghost" 
+          size="sm" 
+          :class="{
+            'text-green-600': autoSaveStatus === 'saved',
+            'text-blue-600': autoSaveStatus === 'saving',
+            'text-orange-600': autoSaveStatus === 'unsaved',
+            'text-red-600': autoSaveStatus === 'error'
+          }"
+          :disabled="true"
+        >
+          <svg v-if="autoSaveStatus === 'saved'" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
           </svg>
-        </BaseButton>
-        <BaseButton variant="primary" size="sm" class="hidden sm:flex">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          <svg v-else-if="autoSaveStatus === 'saving'" class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
           </svg>
-          Save
-        </BaseButton>
-        <!-- Mobile save button -->
-        <BaseButton variant="primary" size="sm" class="flex sm:hidden p-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          <svg v-else-if="autoSaveStatus === 'unsaved'" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.996-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
           </svg>
+          <svg v-else-if="autoSaveStatus === 'error'" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          {{ autoSaveStatusText }}
         </BaseButton>
       </template>
     </PageHeader>
@@ -92,6 +102,73 @@
       />
     </div>
 
+    <!-- Search Dialog -->
+    <div 
+      v-if="showSearchDialog" 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20 z-50"
+      @click.self="showSearchDialog = false"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+        <!-- Search Header -->
+        <div class="p-4 border-b border-gray-200">
+          <div class="flex items-center space-x-3">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input
+              v-model="searchQuery"
+              @input="performSearch"
+              @keydown.esc="showSearchDialog = false"
+              class="search-input flex-1 text-lg border-none outline-none placeholder-gray-400"
+              placeholder="Search across all documents..."
+              type="text"
+            />
+            <button
+              @click="showSearchDialog = false"
+              class="p-1 text-gray-400 hover:text-gray-600 rounded"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Search Results -->
+        <div class="max-h-96 overflow-y-auto">
+          <div v-if="searchQuery.trim() && searchResults.length === 0" class="p-8 text-center text-gray-500">
+            No results found for "{{ searchQuery }}"
+          </div>
+          <div v-else-if="!searchQuery.trim()" class="p-8 text-center text-gray-400">
+            Start typing to search across all documents...
+          </div>
+          <div v-else>
+            <div
+              v-for="result in searchResults"
+              :key="result.document.id"
+              class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+              @click="openSearchResult(result)"
+            >
+              <div class="font-medium text-gray-900 mb-1">
+                {{ result.document.title }}
+                <span v-if="result.titleMatch" class="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                  Title match
+                </span>
+              </div>
+              <div v-if="result.context" class="text-sm text-gray-600">
+                {{ result.context }}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Search Footer -->
+        <div v-if="searchResults.length > 0" class="p-3 bg-gray-50 text-xs text-gray-500 border-t border-gray-200">
+          {{ searchResults.length }} result{{ searchResults.length !== 1 ? 's' : '' }} found
+        </div>
+      </div>
+    </div>
+
     <!-- Dialogs -->
     <NewProjectDialog
       :show="showNewProject"
@@ -124,6 +201,15 @@ const showNewProject = ref(false)
 // Custom splitter state
 const aiPanelHeight = ref(300) // Default height in pixels when expanded
 const isResizing = ref(false)
+
+// Header functionality states
+const showSearchDialog = ref(false)
+const searchQuery = ref('')
+const searchResults = ref([])
+
+// Auto-save state
+const autoSaveStatus = ref('saved') // 'saved', 'saving', 'unsaved', 'error'
+const lastSaveTime = ref(null)
 
 const projectId = computed(() => {
   const id = route.params.id
@@ -179,6 +265,9 @@ const chatMessages = ref([
 const references = ref([])
 const mediaFiles = ref([])
 
+// Project documents for statistics and search
+const projectDocuments = ref([])
+
 // Layout computed properties
 const documentContainerClasses = computed(() => {
   return chatCollapsed.value ? 'col' : 'column-content'
@@ -198,6 +287,24 @@ const aiContainerStyle = computed(() => {
     maxHeight: '600px'
   }
 })
+
+// Auto-save computed
+const autoSaveStatusText = computed(() => {
+  switch (autoSaveStatus.value) {
+    case 'saved':
+      return lastSaveTime.value ? `Saved ${formatTimeAgo(lastSaveTime.value)}` : 'Saved'
+    case 'saving':
+      return 'Saving...'
+    case 'unsaved':
+      return 'Unsaved changes'
+    case 'error':
+      return 'Save failed'
+    default:
+      return 'Unknown'
+  }
+})
+
+
 
 // Event handlers for sidebar events
 function handleMediaUpdated() {
@@ -234,6 +341,85 @@ function startResize(event) {
   document.addEventListener('mouseup', handleMouseUp)
 }
 
+// Helper functions
+function formatTimeAgo(timestamp) {
+  if (!timestamp) return 'recently'
+  
+  const now = new Date()
+  const diff = Math.floor((now - timestamp) / 1000)
+  
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
+}
+
+// Search functionality
+function toggleSearch() {
+  showSearchDialog.value = !showSearchDialog.value
+  
+  if (showSearchDialog.value) {
+    // Focus search input after dialog opens
+    setTimeout(() => {
+      const searchInput = document.querySelector('.search-input')
+      if (searchInput) searchInput.focus()
+    }, 100)
+  }
+}
+
+function performSearch() {
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    return
+  }
+  
+  const query = searchQuery.value.toLowerCase()
+  const results = []
+  
+  projectDocuments.value.forEach(doc => {
+    const text = (doc.text || doc.content || '').toLowerCase()
+    const title = (doc.title || doc.label || '').toLowerCase()
+    
+    if (title.includes(query) || text.includes(query)) {
+      // Find context around matches
+      const textIndex = text.indexOf(query)
+      const titleMatch = title.includes(query)
+      
+      let context = ''
+      if (textIndex !== -1) {
+        const start = Math.max(0, textIndex - 50)
+        const end = Math.min(text.length, textIndex + query.length + 50)
+        context = text.substring(start, end)
+        if (start > 0) context = '...' + context
+        if (end < text.length) context = context + '...'
+      }
+      
+      results.push({
+        document: doc,
+        titleMatch,
+        context,
+        matchIndex: textIndex
+      })
+    }
+  })
+  
+  searchResults.value = results
+}
+
+// Auto-save simulation
+function simulateAutoSave() {
+  // This would normally be triggered by document changes
+  autoSaveStatus.value = 'saving'
+  
+  setTimeout(() => {
+    // Simulate successful save
+    autoSaveStatus.value = 'saved'
+    lastSaveTime.value = new Date()
+  }, 1000)
+}
+
+
+
 // Methods
 const sendMessage = (messageText) => {
   if (!messageText?.trim()) return
@@ -267,6 +453,28 @@ onMounted(async () => {
     // Show new project dialog when on /project/new route
     showNewProject.value = true
   }
+  
+  // Add keyboard shortcuts
+  const handleKeydown = (event) => {
+    // Ctrl+K or Cmd+K to open search
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault()
+      if (currentProject.value) {
+        toggleSearch()
+      }
+    }
+    // Escape to close search
+    if (event.key === 'Escape' && showSearchDialog.value) {
+      showSearchDialog.value = false
+    }
+  }
+  
+  document.addEventListener('keydown', handleKeydown)
+  
+  // Cleanup on unmount
+  return () => {
+    document.removeEventListener('keydown', handleKeydown)
+  }
 })
 
 async function loadProjectData() {
@@ -278,12 +486,55 @@ async function loadProjectData() {
     if (projectResult.success) {
       currentProject.value = projectResult.data
       console.log('Loaded project:', currentProject.value)
+      
+      // Load project documents for statistics and search
+      await loadProjectDocuments()
     } else {
       console.error('Failed to load project:', projectResult.error)
     }
     // References and media are now loaded by the sidebars themselves
   } catch (error) {
     console.error('Error loading project data:', error)
+  }
+}
+
+async function loadProjectDocuments() {
+  if (!projectId.value) return
+  
+  try {
+    // This would normally make an API call to get documents for this project
+    // For now, we'll simulate some documents
+    projectDocuments.value = [
+      {
+        id: 1,
+        title: 'Introduction',
+        text: 'This is the introduction section of our project. It contains important background information and sets the context for our research.',
+        created_at: new Date('2024-01-15')
+      },
+      {
+        id: 2,
+        title: 'Literature Review',
+        text: 'Here we review the existing literature in the field. Many researchers have contributed to this area of study over the years.',
+        created_at: new Date('2024-01-16')
+      },
+      {
+        id: 3,
+        title: 'Methodology',
+        text: 'Our research methodology follows a systematic approach. We employ both qualitative and quantitative methods to ensure comprehensive analysis.',
+        created_at: new Date('2024-01-17')
+      }
+    ]
+    
+    // Set initial auto-save status
+    autoSaveStatus.value = 'saved'
+    lastSaveTime.value = new Date()
+    
+    // Demo: Simulate some auto-save activity after a delay
+    setTimeout(() => {
+      simulateAutoSave()
+    }, 3000)
+  } catch (error) {
+    console.error('Error loading project documents:', error)
   }
 }
 
@@ -302,7 +553,10 @@ watch(() => projectId.value, async (newProjectId, oldProjectId) => {
   }
 })
 
-
+// Watch for search query changes
+watch(() => searchQuery.value, () => {
+  performSearch()
+})
 
 function handleNewProjectClose() {
   showNewProject.value = false
@@ -330,6 +584,15 @@ async function handleProjectDeleted(deletedProject) {
   console.log('Project deleted:', deletedProject)
   // Navigate back to dashboard
   await router.push('/dashboard')
+}
+
+function openSearchResult(result) {
+  console.log('Opening search result:', result)
+  // This would navigate to or highlight the specific document
+  // For now, just close the search dialog
+  showSearchDialog.value = false
+  
+  // TODO: Implement navigation to specific document or scroll to match
 }
 </script>
 
