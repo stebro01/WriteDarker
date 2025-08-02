@@ -12,6 +12,9 @@ from .users import get_db, get_current_user
 
 
 def _ref_to_dict(ref: models.Reference) -> dict:
+    # Calculate filesize if PDF data exists
+    filesize = len(ref.pdf) if ref.pdf else 0
+    
     data = {
         "id": ref.id,
         "title": ref.title,
@@ -21,6 +24,7 @@ def _ref_to_dict(ref: models.Reference) -> dict:
         "filename": ref.filename,
         "filetype": ref.filetype,
         "file_hash": ref.file_hash,
+        "filesize": filesize,
         # PubMed fields
         "pubmed_id": ref.pubmed_id,
         "doi": ref.doi,

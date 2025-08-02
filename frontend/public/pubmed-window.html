@@ -682,9 +682,12 @@ URL: ${data.url || 'N/A'}`
                 }
                 break
               case 'REFERENCE_ERROR':
-                error.value = true
-                errorMessage.value = data.error || 'Failed to load reference'
-                loading.value = false
+                console.warn('Reference error from main window:', data.error)
+                // If the main window can't provide data, try fetching directly
+                if (!reference.value) {
+                  console.log('Attempting direct fetch as fallback')
+                  fetchReferenceData()
+                }
                 break
             }
           }
@@ -697,31 +700,41 @@ URL: ${data.url || 'N/A'}`
             const baseUrl = getBaseUrlFromParent()
             
             if (!token) {
-              throw new Error('No authentication token available')
+              throw new Error('No authentication token available. Please ensure you are logged in.')
             }
             
+            // Use the token in URL as that's what the backend expects
             const url = `${baseUrl}/references/${referenceId}?token=${token}`
-            console.log('Fetching reference data:', url)
+            console.log('Fetching reference data from:', url.replace(token, '***'))
             
             const response = await fetch(url, {
+              method: 'GET',
               headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
               }
             })
 
             if (!response.ok) {
-              throw new Error(`Failed to fetch reference: ${response.status}`)
+              let errorMsg = `HTTP ${response.status}`
+              try {
+                const errorData = await response.json()
+                errorMsg = errorData.error || errorMsg
+              } catch (e) {
+                // If we can't parse error response, use status
+              }
+              throw new Error(`Failed to fetch reference: ${errorMsg}`)
             }
 
             const referenceData = await response.json()
-            console.log('Fetched reference data:', referenceData)
+            console.log('Successfully fetched reference data:', referenceData.title || referenceData.filename)
             
             reference.value = referenceData
             loading.value = false
           } catch (err) {
             console.error('Error fetching reference data:', err)
             error.value = true
-            errorMessage.value = err.message || 'Failed to load reference'
+            errorMessage.value = err.message || 'Failed to load reference data'
             loading.value = false
           }
         }
@@ -755,20 +768,20 @@ URL: ${data.url || 'N/A'}`
           
           // Set up timeout fallback in case no data is received
           setTimeout(() => {
-            if (loading.value) {
-              console.warn('No reference data received after 3 seconds, fetching directly')
+            if (loading.value && !reference.value) {
+              console.warn('No reference data received after 2 seconds, fetching directly')
               fetchReferenceData()
             }
-          }, 3000)
+          }, 2000)
           
           // Final fallback timeout
           setTimeout(() => {
             if (loading.value && !reference.value) {
               error.value = true
-              errorMessage.value = 'Timeout loading reference data'
+              errorMessage.value = 'Timeout: Unable to load reference data after multiple attempts'
               loading.value = false
             }
-          }, 10000)
+          }, 15000)
         })
 
         onUnmounted(() => {

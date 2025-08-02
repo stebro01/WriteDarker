@@ -581,14 +581,28 @@ class WindowManager {
     try {
       console.log('Handling reference data request for ID:', referenceId)
       
-      // Try to get reference from any available stores or sources
-      // This is a fallback method - normally data should be sent during window creation
+      // Try to get reference from the reference store
+      const { useReferenceStore } = await import('../stores/reference')
+      const referenceStore = useReferenceStore()
       
-      // For now, send an error message - the PubMed window will fetch data directly
-      this.sendToWindow(sourceWindow, 'REFERENCE_ERROR', { 
-        error: 'Reference data not available from main window - fetching directly',
-        referenceId: referenceId 
-      })
+      // Get all references and find the one we need
+      const allReferences = referenceStore.references
+      console.log('Found references in store:', allReferences.length)
+      const reference = allReferences.find(ref => ref.id === referenceId)
+      
+      if (reference) {
+        // Convert reactive proxy to plain object for postMessage
+        const plainReference = JSON.parse(JSON.stringify(reference))
+        this.sendToWindow(sourceWindow, 'REFERENCE_DATA', { reference: plainReference })
+        console.log('Sent reference data to window:', plainReference.title)
+      } else {
+        console.error('Reference not found in store:', referenceId, 'Available reference IDs:', allReferences.map(r => r.id))
+        // Send error message to window
+        this.sendToWindow(sourceWindow, 'REFERENCE_ERROR', { 
+          error: 'Reference not found in local store',
+          referenceId: referenceId 
+        })
+      }
     } catch (error) {
       console.error('Error handling reference data request:', error)
       this.sendToWindow(sourceWindow, 'REFERENCE_ERROR', { 
