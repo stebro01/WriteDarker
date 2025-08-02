@@ -302,6 +302,69 @@
     .pubmed-article .article-link:hover {
       background-color: #f9fafb;
     }
+
+    /* Form styling for edit mode */
+    .form-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-error {
+      padding: 0.75rem;
+      background-color: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Grid utilities */
+    .grid {
+      display: grid;
+    }
+    
+    .grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    .gap-4 {
+      gap: 1rem;
+    }
+
+    .space-y-6 > * + * {
+      margin-top: 1.5rem;
+    }
+
+    .p-6 {
+      padding: 1.5rem;
+    }
   </style>
 </head>
 <body>
@@ -332,7 +395,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
               </svg>
             </div>
-            {{ reference?.title || 'PubMed Article' }}
+            {{ editMode ? 'Edit PubMed Article' : (reference?.title || 'PubMed Article') }}
           </h1>
           <p class="text-sm text-gray-600 mt-1 flex items-center">
             <svg class="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,7 +417,119 @@
       <!-- Content -->
       <div class="modal-content">
         <div class="scroll-area">
-          <div class="pubmed-article">
+          <!-- Edit Form -->
+          <div v-if="editMode" class="p-6 space-y-6">
+            <div v-if="saveError" class="form-error">
+              {{ saveError }}
+            </div>
+            
+            <!-- Form Fields -->
+            <div class="form-group">
+              <label for="title" class="form-label">Title</label>
+              <input
+                id="title"
+                v-model="formData.title"
+                type="text"
+                class="form-input"
+                placeholder="Enter article title"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="authors" class="form-label">Authors</label>
+              <input
+                id="authors"
+                v-model="formData.authors"
+                type="text"
+                class="form-input"
+                placeholder="Enter authors"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-group">
+                <label for="journal" class="form-label">Journal</label>
+                <input
+                  id="journal"
+                  v-model="formData.journal"
+                  type="text"
+                  class="form-input"
+                  placeholder="Enter journal name"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="year" class="form-label">Year</label>
+                <input
+                  id="year"
+                  v-model="formData.year"
+                  type="text"
+                  class="form-input"
+                  placeholder="Enter publication year"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-group">
+                <label for="doi" class="form-label">DOI</label>
+                <input
+                  id="doi"
+                  v-model="formData.doi"
+                  type="text"
+                  class="form-input"
+                  placeholder="Enter DOI"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="keywords" class="form-label">Keywords</label>
+                <input
+                  id="keywords"
+                  v-model="formData.keywords"
+                  type="text"
+                  class="form-input"
+                  placeholder="Enter keywords"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="url" class="form-label">URL</label>
+              <input
+                id="url"
+                v-model="formData.url"
+                type="url"
+                class="form-input"
+                placeholder="Enter URL"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="abstract" class="form-label">Abstract</label>
+              <textarea
+                id="abstract"
+                v-model="formData.abstract"
+                class="form-input form-textarea"
+                rows="6"
+                placeholder="Enter article abstract"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="citation" class="form-label">Citation</label>
+              <textarea
+                id="citation"
+                v-model="formData.citation"
+                class="form-input form-textarea"
+                rows="4"
+                placeholder="Enter citation"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Article Display -->
+          <div v-else class="pubmed-article">
             <h1 class="article-title">{{ reference?.title || 'No title available' }}</h1>
             
             <!-- Metadata -->
@@ -485,11 +660,41 @@
       <!-- Footer -->
       <div class="modal-footer">
         <div class="flex items-center">
-          <span class="text-xs text-gray-500">Press ESC to close</span>
+          <span v-if="!editMode" class="text-xs text-gray-500">Press ESC to close</span>
         </div>
         
         <div class="flex items-center space-x-3">
           <button
+            v-if="!editMode"
+            @click="enterEditMode"
+            class="btn btn-primary"
+          >
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Edit Article
+          </button>
+          
+          <template v-if="editMode">
+            <button
+              @click="cancelEdit"
+              class="btn btn-outline"
+              :disabled="saving"
+            >
+              Cancel
+            </button>
+            <button
+              @click="saveChanges"
+              class="btn btn-primary"
+              :disabled="saving"
+            >
+              <div v-if="saving" class="spinner" style="width: 16px; height: 16px; margin-right: 8px;"></div>
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </template>
+          
+          <button
+            v-if="!editMode"
             @click="copyAllData"
             class="btn btn-secondary"
           >
@@ -513,6 +718,22 @@
         const error = ref(false)
         const errorMessage = ref('')
         const reference = ref(null)
+        
+        // Edit mode state
+        const editMode = ref(false)
+        const saving = ref(false)
+        const saveError = ref('')
+        const formData = ref({
+          title: '',
+          authors: '',
+          journal: '',
+          year: '',
+          abstract: '',
+          doi: '',
+          keywords: '',
+          citation: '',
+          url: ''
+        })
 
         // Get reference ID from URL
         const urlParams = new URLSearchParams(window.location.search)
@@ -596,6 +817,132 @@ URL: ${data.url || 'N/A'}`
             document.execCommand('copy')
             document.body.removeChild(textArea)
             alert('Article data copied to clipboard!')
+          }
+        }
+
+        // Edit mode functions
+        function enterEditMode() {
+          if (reference.value) {
+            formData.value = {
+              title: reference.value.title || '',
+              authors: reference.value.authors || '',
+              journal: reference.value.journal || '',
+              year: reference.value.year || '',
+              abstract: reference.value.abstract || '',
+              doi: reference.value.doi || '',
+              keywords: reference.value.keywords || '',
+              citation: reference.value.citation || '',
+              url: reference.value.url || ''
+            }
+          }
+          editMode.value = true
+          saveError.value = ''
+        }
+
+        function cancelEdit() {
+          editMode.value = false
+          saveError.value = ''
+          // Reset form data
+          if (reference.value) {
+            formData.value = {
+              title: reference.value.title || '',
+              authors: reference.value.authors || '',
+              journal: reference.value.journal || '',
+              year: reference.value.year || '',
+              abstract: reference.value.abstract || '',
+              doi: reference.value.doi || '',
+              keywords: reference.value.keywords || '',
+              citation: reference.value.citation || '',
+              url: reference.value.url || ''
+            }
+          }
+        }
+
+        async function saveChanges() {
+          if (!reference.value?.id) {
+            console.error('No reference ID available for saving')
+            return
+          }
+          
+          saving.value = true
+          saveError.value = ''
+          
+          try {
+            const token = getTokenFromParent()
+            const baseUrl = getBaseUrlFromParent()
+            
+            if (!token) {
+              throw new Error('No authentication token available')
+            }
+            
+            const requestData = {
+              title: formData.value.title || null,
+              authors: formData.value.authors || null,
+              journal: formData.value.journal || null,
+              year: formData.value.year || null,
+              abstract: formData.value.abstract || null,
+              doi: formData.value.doi || null,
+              keywords: formData.value.keywords || null,
+              citation: formData.value.citation || null,
+              url: formData.value.url || null
+            }
+            
+            const url = `${baseUrl}/references/${reference.value.id}?token=${token}`
+            console.log('Saving reference changes:', {
+              url,
+              referenceId: reference.value.id,
+              data: requestData,
+              hasToken: !!token
+            })
+            
+            const response = await fetch(url, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(requestData)
+            })
+
+            console.log('API Response:', response.status, response.statusText)
+
+            if (!response.ok) {
+              let errorText = 'Unknown error'
+              try {
+                const errorData = await response.json()
+                errorText = errorData.error || `${response.status} - ${response.statusText}`
+              } catch (e) {
+                errorText = `${response.status} - ${response.statusText}`
+              }
+              console.error('API Error Details:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorText
+              })
+              throw new Error(`Failed to update reference: ${errorText}`)
+            }
+
+            const updatedReference = await response.json()
+            console.log('Reference updated successfully:', updatedReference)
+            
+            // Update local reference object
+            reference.value = { ...reference.value, ...updatedReference }
+            
+            // Notify parent window of the update
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'REFERENCE_UPDATED',
+                data: { reference: updatedReference },
+                source: 'pubmed_window'
+              }, window.location.origin)
+            }
+            
+            editMode.value = false
+          } catch (err) {
+            console.error('Error updating reference:', err)
+            saveError.value = err.message || 'Failed to save changes. Please try again.'
+          } finally {
+            saving.value = false
           }
         }
 
@@ -756,7 +1103,11 @@ URL: ${data.url || 'N/A'}`
           // Set up keyboard shortcuts
           document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
-              window.close()
+              if (editMode.value) {
+                cancelEdit()
+              } else {
+                window.close()
+              }
             }
           })
           
@@ -793,10 +1144,17 @@ URL: ${data.url || 'N/A'}`
           error,
           errorMessage,
           reference,
+          editMode,
+          saving,
+          saveError,
+          formData,
           formatDate,
           closeWindow,
           copyCitation,
-          copyAllData
+          copyAllData,
+          enterEditMode,
+          cancelEdit,
+          saveChanges
         }
       }
     }).mount('#app')
