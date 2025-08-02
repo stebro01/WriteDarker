@@ -36,7 +36,7 @@
               lines="1"
               style="word-break: break-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
             >
-              {{ item.filename || item.label }}
+              {{ item.label || item.filename }}
             </q-item-label>
             <q-item-label 
               caption 
@@ -47,18 +47,6 @@
             </q-item-label>
           </q-item-section>
           <q-item-section side class="min-width-auto flex items-center" style="flex: 0 0 auto;">
-            <q-btn
-              flat
-              round
-              dense
-              size="xs"
-              color="blue-6"
-              icon="edit"
-              @click.stop="editMedia(item)"
-              class="q-mr-xs"
-            >
-              <q-tooltip class="text-caption">Edit media file</q-tooltip>
-            </q-btn>
             <q-btn
               flat
               round
@@ -75,20 +63,11 @@
       </q-list>
     </div>
     </q-expansion-item>
-
-    <!-- Media Edit Dialog -->
-    <MediaEditDialog
-      :show="showMediaEdit"
-      :media="selectedMedia"
-      @close="showMediaEdit = false"
-      @updated="handleMediaUpdated"
-    />
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import MediaEditDialog from '../ui/MediaEditDialog.vue'
+import { computed } from 'vue'
 import { useMediaStore } from '../../stores/media'
 import { windowManager } from '../../services/windowManager'
 
@@ -102,10 +81,6 @@ const emit = defineEmits(['update:expanded'])
 
 // Stores
 const mediaStore = useMediaStore()
-
-// Dialog states
-const showMediaEdit = ref(false)
-const selectedMedia = ref(null)
 
 const expandedModel = computed({
   get: () => props.expanded,
@@ -128,18 +103,36 @@ function openMediaInWindow(media) {
     const window = windowManager.openMediaWindow(plainMedia)
     if (window) {
       console.log('Media opened in new window:', media.filename || media.label)
+      
+      // Set up message listener for media updates
+      const messageHandler = (event) => {
+        if (event.origin !== window.location.origin) return
+        
+        const { type, data, source } = event.data
+        if (type === 'MEDIA_UPDATED' && source === 'media_window' && data.media) {
+          console.log('Media updated from window:', data.media)
+          // Refresh media list to reflect changes
+          if (props.projectId) {
+            handleMediaUpdated()
+          }
+        }
+      }
+      
+      window.addEventListener('message', messageHandler)
+      
+      // Clean up listener when window closes
+      const checkClosed = setInterval(() => {
+        if (window.closed) {
+          window.removeEventListener('message', messageHandler)
+          clearInterval(checkClosed)
+        }
+      }, 1000)
     } else {
       console.error('Failed to open media window')
     }
   } catch (error) {
     console.error('Error opening media in window:', error)
   }
-}
-
-function editMedia(media) {
-  if (!media) return
-  selectedMedia.value = media
-  showMediaEdit.value = true
 }
 
 async function deleteMedia(media) {

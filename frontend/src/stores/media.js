@@ -99,14 +99,18 @@ export const useMediaStore = defineStore('media', {
       }
     },
 
-    async update(id, { label = null, description = null }) {
+    async update(id, { label = null, description = null, filename = null }) {
       const userStore = useUserStore()
       if (!userStore.token || !id) return { success: false, error: 'Missing data' }
       const apiStore = useApiStore()
       this.loading = true
       this.error = null
       try {
-        const data = await apiStore.put(`/documents/${id}?token=${userStore.token}`, { label, description }, userStore.token)
+        const updateData = { label, description }
+        if (filename !== null) {
+          updateData.filename = filename
+        }
+        const data = await apiStore.put(`/documents/${id}?token=${userStore.token}`, updateData, userStore.token)
         const index = this.media.findIndex(m => m.id === id)
         if (index >= 0) {
           this.media[index] = data

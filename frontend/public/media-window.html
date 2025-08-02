@@ -46,61 +46,66 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* Modal-like structure */
+    .modal-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .modal-header {
+      height: 100px;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .modal-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .modal-footer {
+      height: 60px;
+      border-top: 1px solid #e5e7eb;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
     /* Media container */
     .media-container {
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      width: 100vw;
-      position: relative;
+      min-height: 100%;
+      padding: 20px;
     }
 
     .media-content {
-      max-width: 95%;
-      max-height: 95%;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
-    }
-
-    /* Controls overlay */
-    .controls-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
-      padding: 16px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      backdrop-filter: blur(8px);
-    }
-
-    .media-container:hover .controls-overlay {
-      opacity: 1;
-    }
-
-    /* Info overlay */
-    .info-overlay {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(0deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
-      padding: 16px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      backdrop-filter: blur(8px);
-    }
-
-    .media-container:hover .info-overlay {
-      opacity: 1;
     }
 
     /* Close button */
     .close-button {
-      position: absolute;
-      top: 16px;
-      right: 16px;
       width: 32px;
       height: 32px;
       border-radius: 50%;
@@ -111,7 +116,6 @@
       justify-content: center;
       cursor: pointer;
       transition: background-color 0.2s ease;
-      z-index: 1000;
     }
 
     .close-button:hover {
@@ -124,9 +128,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      height: 100%;
       color: #dc2626;
       text-align: center;
+      padding: 20px;
     }
 
     /* Audio player styling */
@@ -141,9 +146,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      height: 100%;
       color: #6b7280;
       text-align: center;
+      padding: 20px;
     }
 
     .file-icon {
@@ -152,6 +158,93 @@
       margin-bottom: 16px;
       opacity: 0.6;
       color: #9ca3af;
+    }
+
+    /* Form styling */
+    .form-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Button styling - matching BaseButton.vue */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      gap: 8px;
+      padding: 10px 16px;
+      font-size: 16px;
+      outline: none;
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .btn:focus {
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Primary variant - Orange background */
+    .btn-primary {
+      background: #f97316;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #ea580c;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Secondary variant - for non-cancel secondary buttons */
+    .btn-secondary {
+      background: #fed7aa;
+      color: #c2410c;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #fdba74;
+    }
+
+    /* Outline variant - for cancel buttons */
+    .btn-outline {
+      border: 2px solid #f97316;
+      color: #f97316;
+      background: white;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background: #f97316;
+      color: white;
+    }
+
+    .btn-icon {
+      width: 16px;
+      height: 16px;
     }
   </style>
 </head>
@@ -172,98 +265,206 @@
       <p class="text-gray-500">{{ errorMessage }}</p>
     </div>
     
-    <!-- Media Preview -->
-    <div v-else class="media-container">
-      <!-- Close Button -->
-      <button @click="closeWindow" class="close-button">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-      
-      <!-- Controls Overlay -->
-      <div class="controls-overlay">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <h1 class="text-gray-900 text-lg font-medium">
-              {{ media?.filename || media?.label || 'Media Preview' }}
-            </h1>
-
-          </div>
-      
+    <!-- Media Preview Modal Structure -->
+    <div v-else class="modal-container">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="flex-1">
+          <h1 class="text-lg font-semibold text-gray-900">
+            {{ editMode ? 'Edit Media Details' : (media?.label || media?.filename || 'Media Preview') }}
+          </h1>
+          <p v-if="!editMode && media" class="text-sm text-gray-600">
+            {{ media.filetype || 'Unknown' }}
+            <span v-if="media.filesize"> • {{ formatFileSize(media.filesize) }}</span>
+          </p>
         </div>
-      </div>
-
-      <!-- Image Preview -->
-      <img
-        v-if="isImage"
-        :src="mediaUrl"
-        :alt="media?.filename || media?.label"
-        class="media-content"
-        @error="handleMediaError"
-        @load="handleMediaLoad"
-      />
-      
-      <!-- Video Preview -->
-      <video
-        v-else-if="isVideo"
-        :src="mediaUrl"
-        controls
-        class="media-content"
-        @error="handleMediaError"
-        @loadeddata="handleMediaLoad"
-      >
-        Your browser does not support the video tag.
-      </video>
-      
-      <!-- Audio Preview -->
-      <div v-else-if="isAudio" class="flex flex-col items-center justify-center h-full">
-        <div class="text-center mb-8">
-          <svg class="w-20 h-20 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
-          </svg>
-          <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ media?.filename || media?.label }}</h2>
-          <p class="text-gray-600">{{ formatFileSize(media?.filesize) }}</p>
-        </div>
-        <audio
-          :src="mediaUrl"
-          controls
-          @error="handleMediaError"
-          @loadeddata="handleMediaLoad"
-        >
-          Your browser does not support the audio tag.
-        </audio>
-      </div>
-      
-      <!-- Unsupported File Type -->
-      <div v-else class="unsupported-file">
-        <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-        </svg>
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ media?.filename || media?.label }}</h2>
-        <p class="text-gray-600 mb-4">Preview not available for this file type</p>
-        <p class="text-sm text-gray-500">{{ media?.filetype || 'Unknown' }} • {{ formatFileSize(media?.filesize) }}</p>
-        <button
-          @click="downloadMedia"
-          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center space-x-2"
-        >
+        
+        <!-- Close Button -->
+        <button @click="closeWindow" class="close-button">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
-          <span>Download File</span>
         </button>
       </div>
 
-      <!-- Info Overlay -->
-      <div class="info-overlay">
-        <div class="flex items-center justify-between">
-          <div class="text-gray-700 text-sm">
-            <span v-if="media?.filetype">{{ media.filetype }}</span>
-            <span v-if="media?.filesize"> • {{ formatFileSize(media.filesize) }}</span>
+      <!-- Content -->
+      <div class="modal-content">
+        <div class="scroll-area">
+          <!-- Edit Form -->
+          <div v-if="editMode" class="p-6 space-y-6">
+            <div v-if="saveError" class="p-3 bg-red-50 border border-red-200 text-red-800 rounded">
+              {{ saveError }}
+            </div>
+            
+            <!-- File Info Section -->
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">File Information</h4>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span class="text-gray-600">Filename:</span>
+                  <span class="ml-2 font-medium">{{ media?.filename || 'Unknown' }}</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">Type:</span>
+                  <span class="ml-2 font-medium">{{ media?.filetype || 'Unknown' }}</span>
+                </div>
+                <div>
+                  <span class="text-gray-600">Size:</span>
+                  <span class="ml-2 font-medium">{{ formatFileSize(media?.filesize) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit Form Fields -->
+            <div class="space-y-4">
+              <div>
+                <label for="filename" class="block text-sm font-medium text-gray-700 mb-1">Filename</label>
+                <div class="flex items-center space-x-2">
+                  <input
+                    id="filename"
+                    v-model="formData.filenameName"
+                    type="text"
+                    class="form-input flex-1"
+                    placeholder="Enter filename (without extension)"
+                  />
+                  <span class="text-sm text-gray-500 font-medium">{{ fileExtension }}</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Preview: {{ newFilename }}</p>
+              </div>
+              <div>
+                <label for="label" class="block text-sm font-medium text-gray-700 mb-1">Label</label>
+                <input
+                  id="label"
+                  v-model="formData.label"
+                  type="text"
+                  class="form-input"
+                  placeholder="Enter a label for this media file"
+                />
+              </div>
+              <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  id="description"
+                  v-model="formData.description"
+                  class="form-input form-textarea"
+                  rows="4"
+                  placeholder="Enter a description for this media file"
+                ></textarea>
+              </div>
+            </div>
           </div>
-          <div class="text-gray-600 text-xs opacity-75">
-            Press ESC to close
+
+          <!-- Media Display -->
+          <div v-else class="media-container">
+            <!-- Image Preview -->
+            <img
+              v-if="isImage"
+              :src="mediaUrl"
+              :alt="media?.label || media?.filename"
+              class="media-content"
+              @error="handleMediaError"
+              @load="handleMediaLoad"
+            />
+            
+            <!-- Video Preview -->
+            <video
+              v-else-if="isVideo"
+              :src="mediaUrl"
+              controls
+              class="media-content"
+              @error="handleMediaError"
+              @loadeddata="handleMediaLoad"
+            >
+              Your browser does not support the video tag.
+            </video>
+            
+            <!-- Audio Preview -->
+            <div v-else-if="isAudio" class="flex flex-col items-center justify-center h-full">
+              <div class="text-center mb-8">
+                <svg class="w-20 h-20 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                </svg>
+                <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ media?.label || media?.filename }}</h2>
+                <p class="text-gray-600">{{ formatFileSize(media?.filesize) }}</p>
+              </div>
+              <audio
+                :src="mediaUrl"
+                controls
+                @error="handleMediaError"
+                @loadeddata="handleMediaLoad"
+              >
+                Your browser does not support the audio tag.
+              </audio>
+            </div>
+            
+            <!-- Unsupported File Type -->
+            <div v-else class="unsupported-file">
+              <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+              </svg>
+              <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ media?.label || media?.filename }}</h2>
+              <p class="text-gray-600 mb-4">Preview not available for this file type</p>
+              <p class="text-sm text-gray-500">{{ media?.filetype || 'Unknown' }} • {{ formatFileSize(media?.filesize) }}</p>
+              <button
+                @click="downloadMedia"
+                class="btn btn-primary mt-4"
+              >
+                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Download File</span>
+              </button>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <div class="flex items-center">
+          <span v-if="!editMode" class="text-xs text-gray-500">Press ESC to close</span>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <button
+            v-if="!editMode"
+            @click="enterEditMode"
+            class="btn btn-primary"
+          >
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Edit Details
+          </button>
+          
+          <template v-if="editMode">
+            <button
+              @click="cancelEdit"
+              class="btn btn-outline"
+              :disabled="saving"
+            >
+              Cancel
+            </button>
+            <button
+              @click="saveChanges"
+              class="btn btn-primary"
+              :disabled="saving"
+            >
+              <div v-if="saving" class="spinner" style="width: 16px; height: 16px; margin-right: 8px;"></div>
+              {{ saving ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </template>
+          
+          <button
+            v-if="!editMode"
+            @click="downloadMedia"
+            class="btn btn-primary"
+          >
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Download
+          </button>
         </div>
       </div>
     </div>
@@ -278,6 +479,16 @@
         const error = ref(false);
         const errorMessage = ref('');
         const media = ref(null);
+        
+        // Edit mode state
+        const editMode = ref(false);
+        const saving = ref(false);
+        const saveError = ref('');
+        const formData = ref({
+          label: '',
+          description: '',
+          filenameName: ''
+        });
 
         // Get media ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -317,6 +528,25 @@
                  filename.match(/\.(mp3|wav|ogg|aac|flac|m4a)$/);
         });
 
+        // Computed properties for filename handling
+        const fileExtension = computed(() => {
+          if (!media.value?.filename) return '';
+          const parts = media.value.filename.split('.');
+          return parts.length > 1 ? '.' + parts[parts.length - 1] : '';
+        });
+
+        const originalFilenameName = computed(() => {
+          if (!media.value?.filename) return '';
+          const filename = media.value.filename;
+          const lastDotIndex = filename.lastIndexOf('.');
+          return lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
+        });
+
+        const newFilename = computed(() => {
+          if (!formData.value.filenameName) return media.value?.filename || '';
+          return formData.value.filenameName + fileExtension.value;
+        });
+
         // Methods
         function formatFileSize(bytes) {
           if (bytes === 0) return '0 B';
@@ -348,16 +578,130 @@
           error.value = false;
         }
 
+        // Edit mode functions
+        function enterEditMode() {
+          if (media.value) {
+            formData.value = {
+              label: media.value.label || '',
+              description: media.value.description || '',
+              filenameName: originalFilenameName.value
+            };
+          }
+          editMode.value = true;
+          saveError.value = '';
+        }
+
+        function cancelEdit() {
+          editMode.value = false;
+          saveError.value = '';
+          // Reset form data
+          if (media.value) {
+            formData.value = {
+              label: media.value.label || '',
+              description: media.value.description || '',
+              filenameName: originalFilenameName.value
+            };
+          }
+        }
+
+        async function saveChanges() {
+          if (!media.value?.id) {
+            console.error('No media ID available for saving');
+            return;
+          }
+          
+          saving.value = true;
+          saveError.value = '';
+          
+          try {
+            const token = getTokenFromParent();
+            const baseUrl = getBaseUrlFromParent();
+            
+            if (!token) {
+              throw new Error('No authentication token available');
+            }
+            
+            const requestData = {
+              label: formData.value.label || null,
+              description: formData.value.description || null
+            };
+
+            // Include filename change if it's different from original
+            if (formData.value.filenameName && formData.value.filenameName !== originalFilenameName.value) {
+              requestData.filename = newFilename.value;
+            }
+            
+            const url = `${baseUrl}/documents/${media.value.id}?token=${token}`;
+            console.log('Saving media changes:', {
+              url,
+              mediaId: media.value.id,
+              data: requestData,
+              hasToken: !!token
+            });
+            
+            // Match the format used by the media store: include token as query parameter
+            const response = await fetch(url, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(requestData)
+            });
+
+            console.log('API Response:', response.status, response.statusText);
+
+            if (!response.ok) {
+              let errorText = 'Unknown error';
+              try {
+                errorText = await response.text();
+              } catch (e) {
+                console.error('Could not read error response:', e);
+              }
+              console.error('API Error Details:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorText
+              });
+              throw new Error(`Failed to update media: ${response.status} - ${errorText}`);
+            }
+
+            const updatedMedia = await response.json();
+            console.log('Media updated successfully:', updatedMedia);
+            
+            // Update local media object
+            media.value = { ...media.value, ...updatedMedia };
+            
+            // Notify parent window of the update
+            if (window.opener) {
+              window.opener.postMessage({
+                type: 'MEDIA_UPDATED',
+                data: { media: updatedMedia },
+                source: 'media_window'
+              }, window.location.origin);
+            }
+            
+            editMode.value = false;
+          } catch (err) {
+            console.error('Error updating media:', err);
+            saveError.value = err.message || 'Failed to save changes. Please try again.';
+          } finally {
+            saving.value = false;
+          }
+        }
+
         // Helper functions to get data from parent window
         function getTokenFromParent() {
           try {
             if (window.opener && window.opener.localStorage) {
               const token = window.opener.localStorage.getItem('auth_token');
+              console.log('Retrieved token from parent:', token ? `Found (${token.length} chars)` : 'Not found');
               return token || '';
             }
           } catch (e) {
-            // Silently handle errors
+            console.error('Error getting token from parent:', e);
           }
+          console.log('No parent window or localStorage access');
           return '';
         }
 
@@ -367,25 +711,29 @@
               // Try to get the API base URL from the parent's API store
               const storedApiUrl = window.opener.localStorage.getItem('api_base_url');
               if (storedApiUrl) {
+                console.log('Using stored API URL:', storedApiUrl);
                 return storedApiUrl;
               }
               
               // Fallback: try to access the parent's API store directly
               if (window.opener.$apiStore) {
                 const apiBaseUrl = window.opener.$apiStore.baseUrl;
+                console.log('Using API store base URL:', apiBaseUrl);
                 return apiBaseUrl;
               }
               
               // Fallback: assume backend is on port 3000 (default config)
               const frontendOrigin = window.opener.location.origin;
               const backendUrl = frontendOrigin.replace(':8080', ':3000');
+              console.log('Using derived backend URL:', backendUrl);
               return backendUrl;
             }
           } catch (e) {
-            // Silently handle errors
+            console.error('Error getting base URL from parent:', e);
           }
           
           // Final fallback - assume localhost:3000
+          console.log('Using fallback base URL: http://localhost:3000');
           return 'http://localhost:3000';
         }
 
@@ -404,6 +752,12 @@
             if (type === 'INIT_MEDIA' && !mediaDataReceived) {
               mediaDataReceived = true;
               media.value = data.media;
+              // Initialize form data (filename name will be set when entering edit mode)
+              formData.value = {
+                label: data.media?.label || '',
+                description: data.media?.description || '',
+                filenameName: ''
+              };
               loading.value = false;
             } else if (type === 'MEDIA_ERROR') {
               error.value = true;
@@ -428,7 +782,11 @@
         function setupKeyboardShortcuts() {
           document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
-              window.close();
+              if (editMode.value) {
+                cancelEdit();
+              } else {
+                window.close();
+              }
             }
           });
         }
@@ -476,11 +834,21 @@
           isImage,
           isVideo,
           isAudio,
+          editMode,
+          saving,
+          saveError,
+          formData,
+          fileExtension,
+          originalFilenameName,
+          newFilename,
           formatFileSize,
           downloadMedia,
           closeWindow,
           handleMediaError,
-          handleMediaLoad
+          handleMediaLoad,
+          enterEditMode,
+          cancelEdit,
+          saveChanges
         };
       }
     }).mount('#app');
