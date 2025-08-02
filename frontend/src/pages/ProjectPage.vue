@@ -203,6 +203,7 @@ import AiAssistant from '../components/project/chat/AiAssistant.vue'
 import RightSidebar from '../components/project/sidebar/RightSidebar.vue'
 import { useProjectStore } from '../stores/project'
 import { useMediaStore } from '../stores/media'
+import { useReferenceStore } from '../stores/reference'
 import { AppConfig } from '../config/app'
 
 // Stores and routing
@@ -210,6 +211,7 @@ const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const mediaStore = useMediaStore()
+const referenceStore = useReferenceStore()
 
 // Dialog states
 const showNewProject = ref(false)
@@ -330,9 +332,9 @@ const autoSaveStatusText = computed(() => {
 
 // Event handlers for sidebar events
 
-function handleReferenceAdded() {
-  // Reference additions are now handled by LeftSidebar
-  console.log('Reference added')
+async function handleReferenceAdded() {
+  console.log('Reference added - reloading references')
+  await loadProjectReferences()
 }
 
 // Custom splitter methods
@@ -526,10 +528,12 @@ async function loadProjectData() {
       
       // Load media files for this project
       await loadProjectMedia()
+      
+      // Load references for this project
+      await loadProjectReferences()
     } else {
       console.error('Failed to load project:', projectResult.error)
     }
-    // References are now loaded by the sidebars themselves
   } catch (error) {
     console.error('Error loading project data:', error)
   }
@@ -584,6 +588,19 @@ async function loadProjectMedia() {
     console.log('Loaded media files:', mediaStore.media.length)
   } catch (error) {
     console.error('Error loading project media:', error)
+  }
+}
+
+async function loadProjectReferences() {
+  if (!projectId.value) return
+  
+  try {
+    console.log('Loading references for project:', projectId.value)
+    await referenceStore.fetchAll(projectId.value)
+    references.value = referenceStore.references
+    console.log('Loaded references:', references.value.length)
+  } catch (error) {
+    console.error('Error loading project references:', error)
   }
 }
 

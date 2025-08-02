@@ -43,9 +43,8 @@
           <ReferenceList
             v-model:expanded="referencesExpanded"
             :references="props.references"
-            @select="openReference"
-            @preview="previewReference"
-            @open-in-window="openReferenceInWindow"
+            :project-id="props.projectId"
+            @reference-removed="handleReferenceRemoved"
           />
           <MediaList
             v-model:expanded="mediaFilesExpanded"
@@ -179,21 +178,7 @@ function handleAddFilesClick() {
   showFileAction.value = true
 }
 
-function openReference(ref) {
-  if (!ref?.id) return
-  window.open(`${apiStore.baseUrl}/references/${ref.id}/file?token=${userStore.token}`, '_blank')
-}
 
-function previewReference(reference) {
-  if (!reference) return
-  selectedReference.value = reference
-  showReferencePreview.value = true
-}
-
-function openReferenceInWindow(reference) {
-  if (!reference?.id) return
-  window.open(`${apiStore.baseUrl}/references/${reference.id}/file?token=${userStore.token}`, '_blank')
-}
 
 
 
@@ -315,6 +300,12 @@ async function handlePubMedImport(article) {
   } catch (error) {
     console.error('Failed to link imported reference:', error)
   }
+}
+
+async function handleReferenceRemoved(reference) {
+  console.log('Reference removed from project:', reference.filename || reference.title)
+  // Emit event to parent to reload references
+  emit('reference-added') // Using the same event since it triggers a reload
 }
 
 

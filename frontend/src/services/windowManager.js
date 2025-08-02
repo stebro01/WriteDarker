@@ -87,6 +87,76 @@ class WindowManager {
   }
 
   /**
+   * Open a reference/PDF in a new window
+   * @param {Object} reference - Reference object
+   * @param {Object} options - Window options
+   * @returns {Window|null} - Reference to opened window
+   */
+  openReferenceWindow(reference, options = {}) {
+    if (!reference?.id) {
+      console.error('No reference ID provided for window opening')
+      return null
+    }
+
+    // For now, get authentication info from localStorage
+    // In the future, we could pass this as options or inject dependencies
+    const token = localStorage.getItem('auth_token')
+    const apiBaseUrl = localStorage.getItem('api_base_url') || 'http://localhost:3000'
+    
+    if (!token) {
+      console.error('No authentication token available')
+      return null
+    }
+
+    const {
+      width = 1200,
+      height = 800,
+      left = (screen.width - 1200) / 2,
+      top = (screen.height - 800) / 2
+    } = options
+
+    // Build window features string
+    const features = [
+      `width=${width}`,
+      `height=${height}`,
+      `left=${left}`,
+      `top=${top}`,
+      'scrollbars=yes',
+      'resizable=yes',
+      'status=no',
+      'toolbar=no',
+      'menubar=no',
+      'location=no'
+    ].join(',')
+
+    // Create the reference URL
+    const referenceUrl = `${apiBaseUrl}/references/${reference.id}/file?token=${token}`
+    
+    // Open the reference directly (PDF viewer, etc.)
+    const newWindow = window.open(referenceUrl, `reference_${reference.id}`, features)
+    
+    if (newWindow) {
+      console.log('Reference opened in new window:', reference.filename || reference.title)
+      
+      // Store window reference using reference ID with 'reference_' prefix
+      this.openWindows.set(`reference_${reference.id}`, newWindow)
+      
+      // Set up close listener
+      const checkClosed = setInterval(() => {
+        if (newWindow.closed) {
+          clearInterval(checkClosed)
+          this.openWindows.delete(`reference_${reference.id}`)
+          this.notifyWindowClosed(`reference_${reference.id}`)
+        }
+      }, 1000)
+    } else {
+      console.error('Failed to open reference window')
+    }
+
+    return newWindow
+  }
+
+  /**
    * Open a media file in a new window
    * @param {Object} media - Media object
    * @param {Object} options - Window options
@@ -179,6 +249,18 @@ class WindowManager {
     // Create a standalone HTML page for media preview
     const baseUrl = window.location.origin
     return `${baseUrl}/media-window.html?id=${media.id}`
+  }
+
+  /**
+   * Close a reference window
+   * @param {number} referenceId - Reference ID
+   */
+  closeReferenceWindow(referenceId) {
+    const window = this.openWindows.get(`reference_${referenceId}`)
+    if (window && !window.closed) {
+      window.close()
+    }
+    this.openWindows.delete(`reference_${referenceId}`)
   }
 
   /**
