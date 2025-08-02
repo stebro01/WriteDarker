@@ -98,8 +98,14 @@ class WindowManager {
       return null
     }
 
-    // For now, get authentication info from localStorage
-    // In the future, we could pass this as options or inject dependencies
+    // Check if this is a PubMed article
+    const isPubMedArticle = reference.pubmed_id || reference.filetype === 'pubmed'
+    
+    if (isPubMedArticle) {
+      return this.openPubMedWindow(reference, options)
+    }
+
+    // For regular file references, get authentication info from localStorage
     const token = localStorage.getItem('auth_token')
     const apiBaseUrl = localStorage.getItem('api_base_url') || 'http://localhost:3000'
     
@@ -151,6 +157,84 @@ class WindowManager {
       }, 1000)
     } else {
       console.error('Failed to open reference window')
+    }
+
+    return newWindow
+  }
+
+  /**
+   * Open a PubMed article in a new window
+   * @param {Object} reference - PubMed reference object
+   * @param {Object} options - Window options
+   * @returns {Window|null} - Reference to opened window
+   */
+  openPubMedWindow(reference, options = {}) {
+    const {
+      width = 1200,
+      height = 800,
+      left = (screen.width - 1200) / 2,
+      top = (screen.height - 800) / 2
+    } = options
+
+    // Close existing window for this reference if it exists
+    this.closeReferenceWindow(reference.id)
+
+    // Build window features string
+    const features = [
+      `width=${width}`,
+      `height=${height}`,
+      `left=${left}`,
+      `top=${top}`,
+      'scrollbars=yes',
+      'resizable=yes',
+      'status=no',
+      'toolbar=no',
+      'menubar=no',
+      'location=no'
+    ].join(',')
+
+    // Create window URL for PubMed article
+    const windowUrl = this.createPubMedWindowUrl(reference)
+    
+    // Open the window
+    const newWindow = window.open(windowUrl, `pubmed_${reference.id}`, features)
+    
+    if (newWindow) {
+      // Store window reference
+      this.openWindows.set(`reference_${reference.id}`, newWindow)
+      
+      // Set up close listener
+      const checkClosed = setInterval(() => {
+        if (newWindow.closed) {
+          clearInterval(checkClosed)
+          this.openWindows.delete(`reference_${reference.id}`)
+          this.notifyWindowClosed(`reference_${reference.id}`)
+        }
+      }, 1000)
+      
+      // Send initial data to window when it loads
+      const sendInitialData = () => {
+        try {
+          // Convert reactive proxy to plain object for postMessage
+          const plainReference = JSON.parse(JSON.stringify(reference))
+          this.sendToWindow(newWindow, 'INIT_REFERENCE', { reference: plainReference })
+          console.log('Sent initial PubMed reference data to window:', plainReference.title)
+        } catch (error) {
+          console.error('Error sending initial PubMed data:', error)
+        }
+      }
+      
+      // Try multiple ways to ensure data is sent
+      newWindow.addEventListener('load', sendInitialData)
+      
+      // Also try after a short delay in case load event doesn't fire
+      setTimeout(() => {
+        if (!newWindow.closed) {
+          sendInitialData()
+        }
+      }, 1000)
+      
+      console.log('PubMed article opened in new window:', reference.title)
     }
 
     return newWindow
@@ -249,6 +333,17 @@ class WindowManager {
     // Create a standalone HTML page for media preview
     const baseUrl = window.location.origin
     return `${baseUrl}/media-window.html?id=${media.id}`
+  }
+
+  /**
+   * Create URL for PubMed window
+   * @param {Object} reference - Reference object
+   * @returns {string} - Window URL
+   */
+  createPubMedWindowUrl(reference) {
+    // Create a standalone HTML page for PubMed article preview
+    const baseUrl = window.location.origin
+    return `${baseUrl}/pubmed-window.html?id=${reference.id}`
   }
 
   /**
@@ -357,6 +452,11 @@ class WindowManager {
       if (source === 'media_window') {
         this.handleMediaWindowMessage(type, data, event.source)
       }
+      
+      // Handle messages from PubMed windows
+      if (source === 'pubmed_window') {
+        this.handlePubMedWindowMessage(type, data, event.source)
+      }
     })
   }
 
@@ -398,6 +498,25 @@ class WindowManager {
         break
       default:
         console.log('Unknown message from media window:', type, data)
+    }
+  }
+
+  /**
+   * Handle messages from PubMed windows
+   * @param {string} type - Message type
+   * @param {Object} data - Message data
+   * @param {Window} sourceWindow - Source window
+   */
+  handlePubMedWindowMessage(type, data, sourceWindow) {
+    switch (type) {
+      case 'REQUEST_REFERENCE_DATA':
+        this.handleReferenceDataRequest(data.referenceId, sourceWindow)
+        break
+      case 'WINDOW_READY':
+        this.handlePubMedWindowReady(data.referenceId, sourceWindow)
+        break
+      default:
+        console.log('Unknown message from PubMed window:', type, data)
     }
   }
 
@@ -451,6 +570,46 @@ class WindowManager {
     console.log(`Media window ready for media ${mediaId}`)
     // Store reference to source window for potential future communication
     // Currently not used but available for future features
+  }
+
+  /**
+   * Handle reference data request from PubMed window
+   * @param {number} referenceId - Reference ID
+   * @param {Window} sourceWindow - Source window
+   */
+  async handleReferenceDataRequest(referenceId, sourceWindow) {
+    try {
+      console.log('Handling reference data request for ID:', referenceId)
+      
+      // Try to get reference from any available stores or sources
+      // This is a fallback method - normally data should be sent during window creation
+      
+      // For now, send an error message - the PubMed window will fetch data directly
+      this.sendToWindow(sourceWindow, 'REFERENCE_ERROR', { 
+        error: 'Reference data not available from main window - fetching directly',
+        referenceId: referenceId 
+      })
+    } catch (error) {
+      console.error('Error handling reference data request:', error)
+      this.sendToWindow(sourceWindow, 'REFERENCE_ERROR', { 
+        error: error.message,
+        referenceId: referenceId 
+      })
+    }
+  }
+
+  /**
+   * Handle PubMed window ready notification
+   * @param {number} referenceId - Reference ID
+   * @param {Window} sourceWindow - Source window
+   */
+  handlePubMedWindowReady(referenceId, sourceWindow) {
+    console.log(`PubMed window ready for reference ${referenceId}`)
+    // Store reference to source window for potential future communication
+    // Currently not used but available for future features
+    if (sourceWindow) {
+      // Could be used for additional window-specific initialization
+    }
   }
 
   /**

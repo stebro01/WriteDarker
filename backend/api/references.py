@@ -258,6 +258,34 @@ def add_reference_to_project(ref_id: int, project_id: int, token: str, db: Sessi
     return _ref_to_dict(ref)
 
 
+@router.delete("/{ref_id}/projects/{project_id}")
+def remove_reference_from_project(ref_id: int, project_id: int, token: str, db: Session = Depends(get_db)):
+    """Remove a reference from a specific project."""
+    user = get_current_user(token, db)
+
+    ref = (
+        db.query(models.Reference)
+        .join(models.Reference.shared_with)
+        .filter(models.Reference.id == ref_id, models.User.id == user.id)
+        .first()
+    )
+    if not ref:
+        raise HTTPException(status_code=404, detail="Reference not found")
+
+    project = (
+        db.query(models.Project)
+        .filter(models.Project.id == project_id, models.Project.author_id == user.id)
+        .first()
+    )
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if project in ref.projects:
+        ref.projects.remove(project)
+        db.commit()
+        db.refresh(ref)
+
+    return {"message": "Reference removed from project"}
 
 
 @router.get("/{ref_id}/file")

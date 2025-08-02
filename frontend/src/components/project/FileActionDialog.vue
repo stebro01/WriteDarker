@@ -83,7 +83,9 @@ import { useApiStore } from '../../stores/api'
 import { useUserStore } from '../../stores/user'
 
 const props = defineProps({
-  show: { type: Boolean, default: false }
+  show: { type: Boolean, default: false },
+  projectId: { type: Number, default: null },
+  projectReferences: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['close', 'upload-pdf', 'search-pubmed', 'upload-media', 'add-reference'])
@@ -101,7 +103,10 @@ const searching = ref(false)
 watch(() => props.show, async (val) => {
   if (val) {
     await referenceStore.fetchAll()
-    topReferences.value = referenceStore.references.slice(0, 5)
+    // Filter out references that are already in the current project
+    const projectReferenceIds = new Set(props.projectReferences.map(ref => ref.id))
+    const availableReferences = referenceStore.references.filter(ref => !projectReferenceIds.has(ref.id))
+    topReferences.value = availableReferences.slice(0, 5)
     searchQuery.value = ''
     searchResults.value = []
     hasSearched.value = false
@@ -114,7 +119,10 @@ async function performSearch() {
   try {
     const query = encodeURIComponent(searchQuery.value.trim())
     const data = await apiStore.get(`/references/user?token=${userStore.token}&search=${query}`)
-    searchResults.value = data || []
+    // Filter out references that are already in the current project
+    const projectReferenceIds = new Set(props.projectReferences.map(ref => ref.id))
+    const filteredResults = (data || []).filter(ref => !projectReferenceIds.has(ref.id))
+    searchResults.value = filteredResults
   } finally {
     searching.value = false
     hasSearched.value = true

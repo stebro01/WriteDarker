@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteDarker - PubMed Article</title>
+  
+  <!-- Import Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom styles -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #ffffff;
+      overflow: hidden;
+    }
+    
+    /* Loading state */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-size: 1.1rem;
+      color: #6b7280;
+    }
+    
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e5e7eb;
+      border-top: 2px solid #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Modal-like structure */
+    .modal-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .modal-header {
+      height: 100px;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .modal-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .modal-footer {
+      height: 60px;
+      border-top: 1px solid #e5e7eb;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Close button */
+    .close-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.1);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .close-button:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Error state */
+    .error-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #dc2626;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Button styling */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      gap: 8px;
+      padding: 10px 16px;
+      font-size: 16px;
+      outline: none;
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .btn:focus {
+      box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Primary variant - Orange background */
+    .btn-primary {
+      background: #f97316;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #ea580c;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Secondary variant */
+    .btn-secondary {
+      background: #fed7aa;
+      color: #c2410c;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #fdba74;
+    }
+
+    .btn-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Custom scrollbar */
+    .scroll-area::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .scroll-area::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    .scroll-area::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    .scroll-area::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+
+    /* PubMed article styling */
+    .pubmed-article {
+      padding: 20px;
+    }
+
+    .pubmed-article .article-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #111827;
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .pubmed-article .article-metadata {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .pubmed-article .article-metadata span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .pubmed-article .article-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .pubmed-article .article-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .pubmed-article .article-tag.doi {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+
+    .pubmed-article .article-tag.keywords {
+      background-color: #dcfce7;
+      color: #166534; 
+    }
+
+    .pubmed-article .article-tag.pmid {
+      background-color: #fef3c7;
+      color: #d97706;
+    }
+
+    .pubmed-article .article-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .pubmed-article .article-section h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pubmed-article .article-abstract {
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    .pubmed-article .article-citation {
+      background-color: #f9fafb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: #374151;
+    }
+
+    .pubmed-article .article-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pubmed-article .article-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #374151;
+      background: white;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+
+    .pubmed-article .article-link:hover {
+      background-color: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Loading State -->
+    <div v-if="loading" class="loading">
+      <div class="spinner"></div>
+      Loading PubMed article...
+    </div>
+    
+    <!-- Error State -->
+    <div v-else-if="error" class="error-state">
+      <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <h2 class="text-xl font-semibold mb-2">Unable to load PubMed article</h2>
+      <p class="text-gray-500">{{ errorMessage }}</p>
+    </div>
+    
+    <!-- PubMed Article Modal Structure -->
+    <div v-else class="modal-container">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="flex-1">
+          <h1 class="text-lg font-semibold text-gray-900 flex items-center">
+            <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mr-3">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+            {{ reference?.title || 'PubMed Article' }}
+          </h1>
+          <p class="text-sm text-gray-600 mt-1 flex items-center">
+            <svg class="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            PubMed Article
+            <span v-if="reference?.pubmed_id" class="ml-2">• PMID: {{ reference.pubmed_id }}</span>
+          </p>
+        </div>
+        
+        <!-- Close Button -->
+        <button @click="closeWindow" class="close-button">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="modal-content">
+        <div class="scroll-area">
+          <div class="pubmed-article">
+            <h1 class="article-title">{{ reference?.title || 'No title available' }}</h1>
+            
+            <!-- Metadata -->
+            <div class="article-metadata">
+              <span v-if="reference?.authors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <strong>Authors:</strong> {{ reference.authors }}
+              </span>
+              
+              <span v-if="reference?.journal">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                <strong>Journal:</strong> {{ reference.journal }}
+              </span>
+              
+              <span v-if="reference?.year">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <strong>Year:</strong> {{ reference.year }}
+              </span>
+              
+              <span v-if="reference?.publication_date">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <strong>Published:</strong> {{ formatDate(reference.publication_date) }}
+              </span>
+            </div>
+
+            <!-- Tags -->
+            <div class="article-tags">
+              <span v-if="reference?.pubmed_id" class="article-tag pmid">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+                PMID: {{ reference.pubmed_id }}
+              </span>
+              
+              <span v-if="reference?.doi" class="article-tag doi">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                </svg>
+                DOI: {{ reference.doi }}
+              </span>
+              
+              <span v-if="reference?.keywords" class="article-tag keywords">
+                Keywords: {{ reference.keywords }}
+              </span>
+            </div>
+
+            <!-- Abstract -->
+            <div v-if="reference?.abstract" class="article-section">
+              <h2>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Abstract
+              </h2>
+              <div class="article-abstract">{{ reference.abstract }}</div>
+            </div>
+
+            <!-- Citation -->
+            <div v-if="reference?.citation" class="article-section">
+              <h2>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                </svg>
+                Citation
+              </h2>
+              <div class="article-citation">
+                {{ reference.citation }}
+                <button 
+                  @click="copyCitation"
+                  class="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                >
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                  </svg>
+                  Copy Citation
+                </button>
+              </div>
+            </div>
+
+            <!-- Links -->
+            <div class="article-section">
+              <h2>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                </svg>
+                External Links
+              </h2>
+              <div class="article-links">
+                <a 
+                  v-if="reference?.url" 
+                  :href="reference.url" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="article-link"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                  View on PubMed
+                </a>
+                
+                <a 
+                  v-if="reference?.doi" 
+                  :href="`https://doi.org/${reference.doi}`" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="article-link"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                  </svg>
+                  View DOI
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <div class="flex items-center">
+          <span class="text-xs text-gray-500">Press ESC to close</span>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <button
+            @click="copyAllData"
+            class="btn btn-secondary"
+          >
+            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy All Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted, onUnmounted } = Vue;
+
+    createApp({
+      setup() {
+        // Reactive state
+        const loading = ref(true)
+        const error = ref(false)
+        const errorMessage = ref('')
+        const reference = ref(null)
+
+        // Get reference ID from URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const referenceId = parseInt(urlParams.get('id'))
+
+        // Methods
+        function formatDate(dateString) {
+          if (!dateString) return 'Unknown'
+          try {
+            return new Date(dateString).toLocaleDateString()
+          } catch (error) {
+            return 'Unknown'
+          }
+        }
+
+        function closeWindow() {
+          window.close()
+        }
+
+        async function copyCitation() {
+          if (!reference.value?.citation) return
+          
+          try {
+            await navigator.clipboard.writeText(reference.value.citation)
+            alert('Citation copied to clipboard!')
+          } catch (err) {
+            console.error('Failed to copy citation:', err)
+            // Fallback for browsers that don't support clipboard API
+            const textArea = document.createElement('textarea')
+            textArea.value = reference.value.citation
+            document.body.appendChild(textArea)
+            textArea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textArea)
+            alert('Citation copied to clipboard!')
+          }
+        }
+
+        async function copyAllData() {
+          if (!reference.value) return
+          
+          const data = {
+            title: reference.value.title,
+            authors: reference.value.authors,
+            journal: reference.value.journal,
+            year: reference.value.year,
+            abstract: reference.value.abstract,
+            doi: reference.value.doi,
+            pubmed_id: reference.value.pubmed_id,
+            url: reference.value.url,
+            citation: reference.value.citation,
+            keywords: reference.value.keywords
+          }
+          
+          const textData = `Title: ${data.title || 'N/A'}
+Authors: ${data.authors || 'N/A'}
+Journal: ${data.journal || 'N/A'}
+Year: ${data.year || 'N/A'}
+PMID: ${data.pubmed_id || 'N/A'}
+DOI: ${data.doi || 'N/A'}
+Keywords: ${data.keywords || 'N/A'}
+
+Abstract:
+${data.abstract || 'N/A'}
+
+Citation:
+${data.citation || 'N/A'}
+
+URL: ${data.url || 'N/A'}`
+          
+          try {
+            await navigator.clipboard.writeText(textData)
+            alert('Article data copied to clipboard!')
+          } catch (err) {
+            console.error('Failed to copy data:', err)
+            // Fallback
+            const textArea = document.createElement('textarea')
+            textArea.value = textData
+            document.body.appendChild(textArea)
+            textArea.select()
+            document.execCommand('copy')
+            document.body.removeChild(textArea)
+            alert('Article data copied to clipboard!')
+          }
+        }
+
+        // Helper functions to get data from parent window
+        function getTokenFromParent() {
+          try {
+            if (window.opener && window.opener.localStorage) {
+              const token = window.opener.localStorage.getItem('auth_token')
+              console.log('Retrieved token from parent:', token ? `Found (${token.length} chars)` : 'Not found')
+              return token || ''
+            }
+          } catch (e) {
+            console.error('Error getting token from parent:', e)
+          }
+          console.log('No parent window or localStorage access')
+          return ''
+        }
+
+        function getBaseUrlFromParent() {
+          try {
+            if (window.opener && window.opener.localStorage) {
+              // Try to get the API base URL from the parent's API store
+              const storedApiUrl = window.opener.localStorage.getItem('api_base_url')
+              if (storedApiUrl) {
+                console.log('Using stored API URL:', storedApiUrl)
+                return storedApiUrl
+              }
+              
+              // Fallback: try to access the parent's API store directly
+              if (window.opener.$apiStore) {
+                const apiBaseUrl = window.opener.$apiStore.baseUrl
+                console.log('Using API store base URL:', apiBaseUrl)
+                return apiBaseUrl
+              }
+              
+              // Fallback: assume backend is on port 3000 (default config)
+              const frontendOrigin = window.opener.location.origin
+              const backendUrl = frontendOrigin.replace(':8080', ':3000')
+              console.log('Using derived backend URL:', backendUrl)
+              return backendUrl
+            }
+          } catch (e) {
+            console.error('Error getting base URL from parent:', e)
+          }
+          
+          // Final fallback - assume localhost:3000
+          console.log('Using fallback base URL: http://localhost:3000')
+          return 'http://localhost:3000'
+        }
+
+        function sendToParent(type, data) {
+          if (window.opener) {
+            window.opener.postMessage({
+              type,
+              data,
+              source: 'pubmed_window'
+            }, window.location.origin)
+          }
+        }
+
+        function handleMessage(event) {
+          // Verify origin for security
+          if (event.origin !== window.location.origin) {
+            return
+          }
+
+          const { type, data, source } = event.data || {}
+
+          if (source === 'main_window') {
+            console.log('Received message from main window:', type, data)
+            switch (type) {
+              case 'INIT_REFERENCE':
+                if (data && data.reference) {
+                  reference.value = data.reference
+                  loading.value = false
+                  console.log('Reference initialized:', data.reference.title)
+                }
+                break
+              case 'REFERENCE_DATA':
+                if (data && data.reference) {
+                  reference.value = data.reference
+                  loading.value = false
+                  console.log('Reference data received:', data.reference.title)
+                }
+                break
+              case 'REFERENCE_ERROR':
+                error.value = true
+                errorMessage.value = data.error || 'Failed to load reference'
+                loading.value = false
+                break
+            }
+          }
+        }
+
+        // Fetch reference data directly if needed
+        async function fetchReferenceData() {
+          try {
+            const token = getTokenFromParent()
+            const baseUrl = getBaseUrlFromParent()
+            
+            if (!token) {
+              throw new Error('No authentication token available')
+            }
+            
+            const url = `${baseUrl}/references/${referenceId}?token=${token}`
+            console.log('Fetching reference data:', url)
+            
+            const response = await fetch(url, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            })
+
+            if (!response.ok) {
+              throw new Error(`Failed to fetch reference: ${response.status}`)
+            }
+
+            const referenceData = await response.json()
+            console.log('Fetched reference data:', referenceData)
+            
+            reference.value = referenceData
+            loading.value = false
+          } catch (err) {
+            console.error('Error fetching reference data:', err)
+            error.value = true
+            errorMessage.value = err.message || 'Failed to load reference'
+            loading.value = false
+          }
+        }
+
+        // Lifecycle
+        onMounted(() => {
+          console.log('PubMed window mounted for reference ID:', referenceId)
+          
+          if (!referenceId) {
+            error.value = true
+            errorMessage.value = 'No reference ID provided'
+            loading.value = false
+            return
+          }
+          
+          // Set up message listener
+          window.addEventListener('message', handleMessage)
+          
+          // Set up keyboard shortcuts
+          document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+              window.close()
+            }
+          })
+          
+          // Notify parent that window is ready
+          sendToParent('WINDOW_READY', { referenceId })
+          
+          // Request reference data from parent
+          sendToParent('REQUEST_REFERENCE_DATA', { referenceId })
+          
+          // Set up timeout fallback in case no data is received
+          setTimeout(() => {
+            if (loading.value) {
+              console.warn('No reference data received after 3 seconds, fetching directly')
+              fetchReferenceData()
+            }
+          }, 3000)
+          
+          // Final fallback timeout
+          setTimeout(() => {
+            if (loading.value && !reference.value) {
+              error.value = true
+              errorMessage.value = 'Timeout loading reference data'
+              loading.value = false
+            }
+          }, 10000)
+        })
+
+        onUnmounted(() => {
+          window.removeEventListener('message', handleMessage)
+        })
+
+        return {
+          loading,
+          error,
+          errorMessage,
+          reference,
+          formatDate,
+          closeWindow,
+          copyCitation,
+          copyAllData
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

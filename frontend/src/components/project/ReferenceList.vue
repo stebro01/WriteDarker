@@ -43,7 +43,7 @@
                 class="text-grey-6"
                 style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
               >
-                {{ reference.filetype || 'Unknown' }} • {{ formatFileSize(reference.filesize) }}
+                {{ getDisplayType(reference) }} • {{ formatFileSize(reference.filesize) }}
               </q-item-label>
             </q-item-section>
             <q-item-section side class="min-width-auto flex items-center" style="flex: 0 0 auto;">
@@ -95,6 +95,21 @@ function formatFileSize(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+}
+
+function getDisplayType(reference) {
+  // Check if this is a PubMed article
+  if (reference.pubmed_id) {
+    return 'PubMed Article'
+  }
+  
+  // If filetype is explicitly set to 'pubmed'
+  if (reference.filetype === 'pubmed') {
+    return 'PubMed Article'
+  }
+  
+  // Return the original filetype or 'Unknown'
+  return reference.filetype || 'Unknown'
 }
 
 function openReferenceInWindow(reference) {

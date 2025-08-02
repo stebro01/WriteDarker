@@ -81,6 +81,8 @@
 
     <FileActionDialog
       :show="showFileAction"
+      :project-id="props.projectId"
+      :project-references="props.references"
       @close="showFileAction = false"
       @upload-pdf="handleUploadPdf"
       @search-pubmed="handleSearchPubMed"
