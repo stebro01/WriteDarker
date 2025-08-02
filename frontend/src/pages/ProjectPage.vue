@@ -54,7 +54,7 @@
         :references="references"
         :media-files="mediaFiles"
         @toggle-collapse="leftSidebarCollapsed = !leftSidebarCollapsed"
-        @media-updated="handleMediaUpdated"
+
         @reference-added="handleReferenceAdded"
         style="height: calc(100vh - 60px);"
       />
@@ -192,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '../components/ui/BaseButton.vue'
 import PageHeader from '../components/ui/PageHeader.vue'
@@ -203,6 +203,7 @@ import AiAssistant from '../components/project/chat/AiAssistant.vue'
 import RightSidebar from '../components/project/sidebar/RightSidebar.vue'
 import { useProjectStore } from '../stores/project'
 import { useMediaStore } from '../stores/media'
+import { AppConfig } from '../config/app'
 
 // Stores and routing
 const route = useRoute()
@@ -225,6 +226,12 @@ const searchResults = ref([])
 // Auto-save state
 const autoSaveStatus = ref('saved') // 'saved', 'saving', 'unsaved', 'error'
 const lastSaveTime = ref(null)
+
+// Screen size checking
+const minWidth = AppConfig.MIN_WIDTH
+const minHeight = AppConfig.MIN_HEIGHT
+const currentWidth = ref(window.innerWidth)
+const currentHeight = ref(window.innerHeight)
 
 const projectId = computed(() => {
   const id = route.params.id
@@ -322,13 +329,6 @@ const autoSaveStatusText = computed(() => {
 
 
 // Event handlers for sidebar events
-async function handleMediaUpdated() {
-  // Reload media files when updated
-  console.log('Media updated - reloading media list')
-  if (projectId.value) {
-    await loadProjectMedia()
-  }
-}
 
 function handleReferenceAdded() {
   // Reference additions are now handled by LeftSidebar
@@ -370,6 +370,19 @@ function formatTimeAgo(timestamp) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
+}
+
+// Screen size functions
+function updateScreenSize() {
+  currentWidth.value = window.innerWidth
+  currentHeight.value = window.innerHeight
+}
+
+function checkScreenSize() {
+  updateScreenSize()
+  if (currentWidth.value < minWidth || currentHeight.value < minHeight) {
+    router.push('/error-screen-size')
+  }
 }
 
 // Search functionality
@@ -464,6 +477,9 @@ const sendMessage = (messageText) => {
 }
 
 onMounted(async () => {
+  // Check screen size first
+  checkScreenSize()
+  
   if (projectId.value) {
     // Load project data and related items
     await loadProjectData()
@@ -488,11 +504,11 @@ onMounted(async () => {
   }
   
   document.addEventListener('keydown', handleKeydown)
-  
-  // Cleanup on unmount
-  return () => {
-    document.removeEventListener('keydown', handleKeydown)
-  }
+  window.addEventListener('resize', checkScreenSize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkScreenSize)
 })
 
 async function loadProjectData() {

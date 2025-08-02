@@ -29,7 +29,7 @@
             clickable
             class="cursor-pointer"
             style="flex: 1 1 0; min-width: 0;"
-            @click="emit('open-in-window', item)"
+            @click="openMediaInWindow(item)"
           >
             <q-item-label 
               class="text-caption text-weight-medium text-grey-9" 
@@ -47,7 +47,18 @@
             </q-item-label>
           </q-item-section>
           <q-item-section side class="min-width-auto flex items-center" style="flex: 0 0 auto;">
-
+            <q-btn
+              flat
+              round
+              dense
+              size="xs"
+              color="blue-6"
+              icon="edit"
+              @click.stop="editMedia(item)"
+              class="q-mr-xs"
+            >
+              <q-tooltip class="text-caption">Edit media file</q-tooltip>
+            </q-btn>
             <q-btn
               flat
               round
@@ -55,7 +66,7 @@
               size="xs"
               color="red-6"
               icon="delete"
-              @click.stop="emit('delete', item)"
+              @click.stop="deleteMedia(item)"
             >
               <q-tooltip class="text-caption">Delete media file</q-tooltip>
             </q-btn>
@@ -64,18 +75,37 @@
       </q-list>
     </div>
     </q-expansion-item>
+
+    <!-- Media Edit Dialog -->
+    <MediaEditDialog
+      :show="showMediaEdit"
+      :media="selectedMedia"
+      @close="showMediaEdit = false"
+      @updated="handleMediaUpdated"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import MediaEditDialog from '../ui/MediaEditDialog.vue'
+import { useMediaStore } from '../../stores/media'
+import { windowManager } from '../../services/windowManager'
 
 const props = defineProps({
   media: { type: Array, default: () => [] },
-  expanded: { type: Boolean, default: true }
+  expanded: { type: Boolean, default: true },
+  projectId: { type: Number, default: null }
 })
 
-const emit = defineEmits(['update:expanded', 'select', 'delete', 'open-in-window'])
+const emit = defineEmits(['update:expanded'])
+
+// Stores
+const mediaStore = useMediaStore()
+
+// Dialog states
+const showMediaEdit = ref(false)
+const selectedMedia = ref(null)
 
 const expandedModel = computed({
   get: () => props.expanded,
@@ -88,5 +118,58 @@ function formatFileSize(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+}
+
+function openMediaInWindow(media) {
+  if (!media) return
+  try {
+    // Convert reactive media to plain object
+    const plainMedia = JSON.parse(JSON.stringify(media))
+    const window = windowManager.openMediaWindow(plainMedia)
+    if (window) {
+      console.log('Media opened in new window:', media.filename || media.label)
+    } else {
+      console.error('Failed to open media window')
+    }
+  } catch (error) {
+    console.error('Error opening media in window:', error)
+  }
+}
+
+function editMedia(media) {
+  if (!media) return
+  selectedMedia.value = media
+  showMediaEdit.value = true
+}
+
+async function deleteMedia(media) {
+  if (!media?.id) return
+  
+  // Show confirmation dialog
+  const confirmed = confirm(`Are you sure you want to delete "${media.filename || media.label}"? This action cannot be undone.`)
+  if (!confirmed) return
+  
+  console.log('Deleting media:', media.filename || media.label)
+  
+  try {
+    const result = await mediaStore.delete(media.id)
+    
+    if (result.success) {
+      console.log('Media deleted successfully')
+      // Media is automatically removed from the store, so the UI will update
+    } else {
+      console.error('Failed to delete media:', result.error)
+      alert(`Failed to delete media: ${result.error}`)
+    }
+  } catch (error) {
+    console.error('Error deleting media:', error)
+    alert('Failed to delete media. Please try again.')
+  }
+}
+
+async function handleMediaUpdated() {
+  if (props.projectId) {
+    await mediaStore.fetch(props.projectId)
+  }
 }
 </script>

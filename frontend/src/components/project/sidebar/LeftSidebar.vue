@@ -50,9 +50,7 @@
           <MediaList
             v-model:expanded="mediaFilesExpanded"
             :media="props.mediaFiles"
-            @select="editMedia"
-            @delete="deleteMedia"
-            @open-in-window="openMediaInWindow"
+            :project-id="props.projectId"
           />
         </q-list>
       </div>
@@ -74,12 +72,7 @@
 
     <!-- Dialogs -->
 
-    <MediaEditDialog
-      :show="showMediaEdit"
-      :media="selectedMedia"
-      @close="showMediaEdit = false"
-      @updated="handleMediaUpdated"
-    />
+
 
     <ReferencePreviewDialog
       :show="showReferencePreview"
@@ -123,16 +116,15 @@ import { ref } from 'vue'
 import ReferenceList from '../ReferenceList.vue'
 import MediaList from '../MediaList.vue'
 
-import MediaEditDialog from '../../ui/MediaEditDialog.vue'
+
 import ReferencePreviewDialog from '../../ui/ReferencePreviewDialog.vue'
 import FileActionDialog from '../FileActionDialog.vue'
 import FileUpload from '../../ui/FileUpload.vue'
 import PubMedSearch from '../../ui/PubMedSearch.vue'
 import { useApiStore } from '../../../stores/api'
 import { useUserStore } from '../../../stores/user'
-import { useMediaStore } from '../../../stores/media'
+
 import { useReferenceStore } from '../../../stores/reference'
-import { windowManager } from '../../../services/windowManager'
 
 // Props
 const props = defineProps({
@@ -161,14 +153,12 @@ const props = defineProps({
 // Emits
 const emit = defineEmits([
   'toggle-collapse',
-  'media-updated',
   'reference-added'
 ])
 
 // Stores
 const apiStore = useApiStore()
 const userStore = useUserStore()
-const mediaStore = useMediaStore()
 const referenceStore = useReferenceStore()
 
 // Local state
@@ -180,9 +170,7 @@ const showFileAction = ref(false)
 const showPdfUpload = ref(false)
 const showMediaUpload = ref(false)
 const showPubMedSearch = ref(false)
-const showMediaEdit = ref(false)
 const showReferencePreview = ref(false)
-const selectedMedia = ref(null)
 const selectedReference = ref(null)
 const droppedFiles = ref([])
 
@@ -207,28 +195,7 @@ function openReferenceInWindow(reference) {
   window.open(`${apiStore.baseUrl}/references/${reference.id}/file?token=${userStore.token}`, '_blank')
 }
 
-function openMediaInWindow(media) {
-  if (!media) return
-  try {
-    // Convert reactive media to plain object
-    const plainMedia = JSON.parse(JSON.stringify(media))
-    const window = windowManager.openMediaWindow(plainMedia)
-    if (window) {
-      console.log('Media opened in new window:', media.filename || media.label)
-    } else {
-      console.error('Failed to open media window')
-    }
-  } catch (error) {
-    console.error('Error opening media in window:', error)
-  }
-}
 
-
-function editMedia(media) {
-  if (!media) return
-  selectedMedia.value = media
-  showMediaEdit.value = true
-}
 
 // File handling methods
 async function handleUploadPdf() {
@@ -292,6 +259,10 @@ async function uploadMediaFiles(files) {
   for (const file of files) {
     console.log('Uploading file:', file.name, 'Type:', file.type, 'Size:', file.size)
     try {
+      // Import mediaStore dynamically since we only need it for uploads
+      const { useMediaStore } = await import('../../../stores/media')
+      const mediaStore = useMediaStore()
+      
       const result = await mediaStore.upload({ 
         projectId: props.projectId, 
         file, 
@@ -314,23 +285,10 @@ async function uploadMediaFiles(files) {
   // Show summary
   console.log(`Upload complete: ${successCount} successful, ${errorCount} failed`)
   
-  // Refresh the media list after upload
-  if (props.projectId && successCount > 0) {
-    try {
-      await mediaStore.fetch(props.projectId)
-      console.log('Media list refreshed')
-    } catch (error) {
-      console.error('Failed to refresh media list:', error)
-    }
-  }
+  // Media list will automatically refresh through the store
 }
 
-async function handleMediaUpdated() {
-  if (props.projectId) {
-    await mediaStore.fetch(props.projectId)
-  }
-  emit('media-updated')
-}
+
 
 async function linkReferenceToProject(reference) {
   if (!props.projectId || !reference?.id) return
@@ -359,28 +317,5 @@ async function handlePubMedImport(article) {
   }
 }
 
-async function deleteMedia(media) {
-  if (!media?.id) return
-  
-  // Show confirmation dialog
-  const confirmed = confirm(`Are you sure you want to delete "${media.filename || media.label}"? This action cannot be undone.`)
-  if (!confirmed) return
-  
-  console.log('Deleting media:', media.filename || media.label)
-  
-  try {
-    const result = await mediaStore.delete(media.id)
-    
-    if (result.success) {
-      console.log('Media deleted successfully')
-      // Media is automatically removed from the store, so the UI will update
-    } else {
-      console.error('Failed to delete media:', result.error)
-      alert(`Failed to delete media: ${result.error}`)
-    }
-  } catch (error) {
-    console.error('Error deleting media:', error)
-    alert('Failed to delete media. Please try again.')
-  }
-}
+
 </script>
